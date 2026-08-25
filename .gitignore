@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+tools/node_modules/
+
+# Playwright
+tools/shots/
+test-results/
+playwright-report/
+.playwright/
+pw-browsers/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+.claude/settings.local.json

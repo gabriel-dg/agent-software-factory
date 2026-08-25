@@ -1,0 +1,338 @@
+{
+  "meta": {
+    "title": "The Monty Hall Problem",
+    "subtitle": "You think it's 50/50. Play it and check.",
+    "intro": "Three doors. One prize. A host who knows where it is. Play it, work out why the numbers land where they do, then run it hundreds of times and check.",
+    "intro_assert": { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 }
+  },
+
+  "gutCheckInitial": {
+    "heading": "Before we start: what's your gut answer?",
+    "body": "You're on a game show. There are 3 doors. Behind one is a car; behind the other two, goats. You pick a door, say Door 1. The host, who knows exactly where the car is, opens a different door and reveals a goat. He then asks: stay with Door 1, or switch to the other unopened door?",
+    "prompt": "What gives you the best odds of winning the car?",
+    "options": [
+      { "id": "fifty", "label": "It doesn't matter: it's 50/50 either way" },
+      { "id": "stay", "label": "Staying is better" },
+      { "id": "switch", "label": "Switching is better" },
+      { "id": "unsure", "label": "Not sure" }
+    ],
+    "confirmButton": "Lock in my answer"
+  },
+
+  "rules": {
+    "heading": "The rules, exactly as they are",
+    "steps": [
+      "There are 3 doors. Behind one is a car. Behind the other two are goats.",
+      "You pick a door. It stays closed for now.",
+      "The host opens one of the two doors you did not pick.",
+      "This happens on every single round, no matter what you picked: the host always opens a door and always offers you the switch. It is never skipped, and it is never contingent on whether you happened to pick the car.",
+      "The door he opens is never the car. Always a goat.",
+      "He knows exactly where the car is. He never guesses, and he never opens your door or the car's door.",
+      "Two-thirds of the time that leaves him exactly one legal door: no choice. The other third of the time (you picked the car) both remaining doors are goats, and he picks between them with a fair coin flip: a genuine 50/50, no favorite. Remember that coin. Everything later depends on it being fair."
+    ],
+    "steps_assert": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      [
+        { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+        { "doorCount": 3, "hostMode": "knowing", "metric": "stayWins", "expected": 0.3333, "tolerance": 0.05 }
+      ]
+    ],
+    "mechanismCallout": {
+      "label": "The one rule everything depends on",
+      "text": "The host can never open your door or the car's door. Two-thirds of the time that leaves him exactly one legal door: no choice. That forced choice, across the three equally likely starting cases, is the entire reason switching wins 2 of 3 times, coin or no coin. The coin only comes in for a narrower question: once you've seen exactly which door he opened, does that specific door tell you anything extra? Keeping that answer honest needs a fair coin. We'll prove that part later."
+    },
+    "continueButton": "Got it, let's play"
+  },
+
+  "round3": {
+    "heading": "Round 1: play it yourself",
+    "intro": "Pick a door. No tricks yet, just play it straight.",
+    "pickPrompt": "Pick a door: 1, 2, or 3.",
+    "doorLabel": "Door {{n}}",
+    "pickedLabel": "Your pick",
+    "hostThinking": "The host looks behind the doors...",
+    "hostRevealText": "The host opens Door {{hostDoor}} and shows you a goat.",
+    "hostKnowledgeReminder": "He skipped Door {{pickedDoor}} (yours) and the car's door. Whether or not the car was behind your own door, he was always going to show you a goat: if your door had the car, he still had a choice between the two goat doors; if it didn't, he had no choice at all. Next: why that guarantee changes everything.",
+    "switchPrompt": "Final answer: stay with Door {{pickedDoor}}, or switch to Door {{remainingDoor}}?",
+    "stayButton": "Stay with Door {{pickedDoor}}",
+    "switchButton": "Switch to Door {{remainingDoor}}",
+    "revealPrompt": "Reveal what's behind the door",
+    "resultWinStay": "You stayed, and there's the car. One win doesn't prove staying is the better strategy. Next: the real math.",
+    "resultLoseStay": "You stayed, and that's a goat. One round proves nothing either way. Next: the real math.",
+    "resultWinSwitch": "You switched, and there's the car. One win doesn't prove switching is better either. Next: the real math, and the exact numbers.",
+    "resultLoseSwitch": "You switched, and that's a goat. Switching doesn't win every round, and this was one that got away. What you did see for certain: the host's reveal never depended on your door. Next: why that means switching wins more often.",
+    "playAgainButton": "Play another round",
+    "continueButton": "What's actually going on here?"
+  },
+
+  "mechanismContrast": {
+    "heading": "Three cases. That's the whole proof.",
+    "intro": "Before you pick, there are exactly three equally likely situations. You don't know which one you're in. The host does, and what he's allowed to do is different in each one.",
+    "threeCases": {
+      "heading": "The three cases",
+      "note": "This isn't a convenient regrouping, it's just naming the three real doors. The car is behind exactly one of them, so before you pick there are exactly three equally likely outcomes: you land on the car, on one specific goat, or on the other specific goat. Nothing is split apart to inflate the count; those are the three physical doors.",
+      "rows": [
+        {
+          "case": "You picked the car",
+          "hostChoice": "Both other doors are goats. This is the only case where the host has a free choice, and he breaks it with a fair coin flip.",
+          "ifSwitch": "You'd switch away from the car. Switching loses."
+        },
+        {
+          "case": "You picked Goat A",
+          "hostChoice": "The only doors left are Goat B and the car. He can't open the car, so he must open Goat B.",
+          "ifSwitch": "The only door left closed is the car's. Switching wins."
+        },
+        {
+          "case": "You picked Goat B",
+          "hostChoice": "The only doors left are Goat A and the car. He can't open the car, so he must open Goat A.",
+          "ifSwitch": "The only door left closed is the car's. Switching wins."
+        }
+      ],
+      "conclusion": "Add it up: switching wins in 2 of these 3 equally likely cases. That's the whole proof of the 2/3 win rate, no formalism needed, and it holds regardless of how the host breaks the tie on his one free-choice case, fair coin or not.",
+      "conclusion_assert": { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+      "tieBreakRule": "A sharper question: does the specific door he opens tell you something extra about your own door? Answering it needs the fair coin rule from before, worked out below, including what breaks if the host isn't fair, and what happens if he isn't paying attention at all (Host B, further down).",
+      "tieBreakRule_assert": { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+      "whyYourDoorDoesntMove": {
+        "heading": "Doesn't the specific door he opens tell me something new?",
+        "lead": "Whichever door the host opens, three starting cases could have led there. Walk through all three, including the one that contributes nothing, then divide to get the real answer.",
+        "knowingHost": {
+          "label": "The real host: knows where the car is, breaks ties with a fair coin",
+          "routes": [
+            {
+              "label": "Route 1: you had the car",
+              "detail": "Prior odds: 1 in 3. He still had to choose between two goat doors, and the fair coin sends him to this exact one half the time. Joint probability: 1/3 x 1/2 = 1 in 6."
+            },
+            {
+              "label": "Route 2: you had the other goat",
+              "detail": "Prior odds: 1 in 3. He wasn't choosing anything: exactly one legal door, and it happened to be this one. No coin to divide by, because there was no choice. Joint probability: 1/3 x 1 = 2 in 6."
+            },
+            {
+              "label": "Route 3: you had the goat behind the door that actually got opened",
+              "detail": "Prior odds: 1 in 3, same as the others, but this route contributes zero. If you'd picked the goat behind the door he just opened, that door would BE your door, and the host can never open your door. Ruled out by the rule itself. Joint probability: 0."
+            }
+          ],
+          "workedDivision": "These three routes cover every possibility: 1/6 + 2/6 + 0 = 3/6 (that total, 1/2, is the overall chance this exact door gets opened at all). Route 3 is impossible, so Routes 1 and 2 are what actually produced what you watched. Divide each by the total: Route 1: (1/6) / (3/6) = 1/3. Route 2: (2/6) / (3/6) = 2/3.",
+          "conclusion": "Conditional on watching this exact door open: 1 in 3 you had the car (stay wins), 2 in 3 the other closed door has it (switch wins). Same split as the three-case table, now proven to survive even after zooming in on the specific door.",
+          "conclusion_assert": [
+            { "doorCount": 3, "hostMode": "knowing", "metric": "stayWins", "expected": 0.3333, "tolerance": 0.05 },
+            { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 }
+          ]
+        },
+        "randomHost": {
+          "label": "For comparison: Host B, who has no idea where the car is and opens at random",
+          "intro": "Run the identical three routes on Host B, further down: same door opened, same goat behind it, pixel-identical evidence to the table above. Condition on exactly what you'd observe: this door opened, and it showed a goat, not the car.",
+          "routes": [
+            {
+              "label": "Route 1: you had the car",
+              "detail": "Prior odds: 1 in 3. A random host opens each of the other two doors with equal odds regardless of what's behind them, so he lands on this exact door half the time. Since the car is behind your own door here, whatever he opens is a goat. Joint probability: 1/3 x 1/2 = 1 in 6, identical to the knowing host's Route 1: a fair coin behaves the same whether or not the host knows where the car is."
+            },
+            {
+              "label": "Route 2: you had the other goat",
+              "detail": "Prior odds: 1 in 3. The car is behind the remaining closed door, but the random host doesn't know that, so he still opens each remaining door with equal odds, and happens to pick this goat door instead of the car's. Joint probability: 1/3 x 1/2 = 1 in 6. Unlike the knowing host, nothing forced him to leave the car's door shut, he just happened to. That's the whole difference: the coin that only touched Route 1 in the table above now touches Route 2 too, so it stays at 1 in 6 instead of doubling to 2 in 6."
+            },
+            {
+              "label": "Route 3: a different question, the car itself was behind the door that got opened",
+              "detail": "This isn't the mirror of the knowing host's Route 3 above (your own door can never be the door that gets opened, in either table, so that case doesn't need a row here either). This route asks something else: what if the car itself sat behind the door that opened? Prior odds: 1 in 3. A random host opening this exact door would then reveal the car, not a goat, which isn't what you saw. Conditional on 'this door opened and showed a goat,' this route contributes zero, ruled out by what you actually observed, not by any rule."
+            }
+          ],
+          "workedDivision": "Only Routes 1 and 2 match what you watched. Add them: 1/6 + 1/6 = 2/6 (that total, 1/3, is the chance this door opens and shows a goat at all). Divide each by that total: Route 1: (1/6) / (2/6) = 1/2. Route 2: (1/6) / (2/6) = 1/2.",
+          "conclusion": "1 in 2, not 1 in 3 versus 2 in 3. With a random host, the door he opened tells you nothing extra: staying and switching are dead even. Running Host B below confirms this in aggregate too.",
+          "conclusion_assert": { "doorCount": 3, "hostMode": "random", "metric": "noRevealAndSwitchWins", "expected": 0.5, "tolerance": 0.06 }
+        },
+        "comparisonTakeaway": "Compare Routes 1 and 2 across both tables, the two rows that mean the same thing in each (Route 3 answers a different question in each table, so don't expect it to line up): the difference is one thing. Knowing host: Route 2 has no coin flip, he's forced, so it's worth twice Route 1 (2/6 vs 1/6). Random host: Route 2 gets the same coin flip as Route 1, so they're equal (1/6 and 1/6). One forcing rule, applied to one of the two live routes, is the entire reason pixel-identical evidence supports a 2/3 edge from one host and a flat 50/50 from the other.",
+        "fairnessNote": "Here's what breaks without a fair coin. Take a hypothetical host who, on a free choice, always opens the lower-numbered door (a fixed preference, never a coin flip). Not simulated on this page, sim.js only models the fair-coin host and random Host B, so treat this as a hand-worked side calculation. You picked Door 1. Car behind Door 1: he always opens Door 2, never Door 3. Car behind Door 2: forced to open Door 3. Car behind Door 3: forced to open Door 2. If he opens Door 3 (his non-favorite), that only happens in the 'car behind Door 2' case: switching wins with total certainty. If he opens Door 2 (his favorite), that's consistent with two cases at once (car behind Door 1, or forced by car behind Door 3): the odds collapse to a flat 50/50. Same guaranteed goat reveal every round, exactly like the real host, and yet the odds swing from a certain win to a coin flip depending only on which door he opens. A guaranteed reveal isn't automatically uninformative. What keeps the real host's table even, the same 1-to-2 ratio no matter which door opens, is specifically that his coin is fair. That's why Beat 1 insists on it. One thing doesn't move even in this biased hypothetical: always switching still wins 2 of these 3 equally likely starting cases outright, the same aggregate 2/3, coin or no coin, exactly as the three-case table showed. What the biased coin breaks is only the narrower, specific-door question; the aggregate strategy is safe from tie-break bias, the fine-grained one isn't."
+      }
+    },
+    "knowingHostLabel": "Host A: knows where the car is (the real game)",
+    "knowingHostDescription": "The game you just played. Always opens a door that isn't yours and isn't the car: forced to on 2 of 3 rounds, and on the other 1 of 3 (you have the car) he picks between the two goat doors with a fair coin flip.",
+    "knowingHostDescription_assert": [
+      { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+      { "doorCount": 3, "hostMode": "knowing", "metric": "stayWins", "expected": 0.3333, "tolerance": 0.05 }
+    ],
+    "randomHostLabel": "Host B: has no idea, opens at random",
+    "randomHostDescription": "Opens one of the other two doors at random, with no knowledge of what's behind it. About a third of the time that's the car outright, and the round is spoiled.",
+    "randomHostDescription_assert": { "doorCount": 3, "hostMode": "random", "metric": "prizeRevealed", "expected": 0.3333, "tolerance": 0.05 },
+    "runButton": "Run {{n}} rounds with each host",
+    "knowingHostResult": "Host A, {{n}} rounds: switch wins {{switchWinPct}}%, stay wins {{stayWinPct}}%.",
+    "randomHostResult": "Host B, {{n}} rounds: of the rounds where he happened to reveal a goat, switch wins {{switchWinPct}}%, stay wins {{stayWinPct}}%. He also revealed the car outright in {{spoiledCount}} rounds, something Host A can never do.",
+    "takeaway": "Why the two hosts aren't equivalent: the arithmetic. When you started on the car, both remaining doors are goats, so Host B can never reveal the car there either; that round always survives, and it's a round where switching loses. When you started on a goat, one remaining door is the car, and Host B is equally likely to open either one: half the time he shows the goat and the round survives as a switching win, half the time he shows the car and the round is spoiled. Every spoiled round is one switching would have won; none of them is one switching would have lost. That's what drags the survivors down from 2/3 to 50/50.",
+    "takeaway_assert": { "doorCount": 3, "hostMode": "random", "metric": "noRevealAndSwitchWins", "expected": 0.5, "tolerance": 0.06 },
+    "continueButton": "Show me the numbers add up"
+  },
+
+  "aggregateStats3": {
+    "heading": "Run it hundreds of times",
+    "intro": "Same host rule you already played by hand and proved by enumeration, just run automatically now, hundreds of times. Watch the win rate settle.",
+    "runButton": "Run {{n}} rounds",
+    "runButtonOptions": ["Run 10", "Run 100", "Run 1000"],
+    "stayWinLabel": "Stay wins",
+    "switchWinLabel": "Switch wins",
+    "statLine": "Out of {{n}} rounds: staying won {{stayWinPct}}% of the time, switching won {{switchWinPct}}%.",
+    "interpretation": "The more rounds you run, the closer this settles to 1 in 3 for staying and 2 in 3 for switching, exactly what the three cases predicted before a single round ran. A small batch can land anywhere; that's expected, not a contradiction.",
+    "interpretation_assert": [
+      { "doorCount": 3, "hostMode": "knowing", "metric": "stayWins", "expected": 0.3333, "tolerance": 0.05 },
+      { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 }
+    ],
+    "continueButton": "Now make it obvious"
+  },
+
+  "round100": {
+    "heading": "Turn it up to 100 doors",
+    "intro": "Same rules, bigger stage. 100 doors, one car. You pick one door: 1-in-100 odds you're right. The host, who still knows exactly where the car is, opens 98 of the remaining 99 doors, all goats, leaving your door and one other closed.",
+    "intro_assert": { "doorCount": 100, "hostMode": "knowing", "metric": "stayWins", "expected": 0.01, "tolerance": 0.02 },
+    "pickPrompt": "Pick a door, 1 through 100.",
+    "pickedLabel": "Your pick: Door {{n}}",
+    "hostRevealText": "The host opens 98 doors ({{openedList}}), every single one a goat. Only Door {{pickedDoor}} (yours) and Door {{remainingDoor}} remain closed.",
+    "mechanismCallout": "The host made 98 decisions and every one dodged the car. If he'd been guessing blind, how lucky is that? Two routes to that luck: your door had the car all along (1-in-100), or the car sat behind the one door he randomly left closed (also about 1-in-100). Add them: blind luck pulls this off only about 1 time in 50, roughly 2%. What actually happened wasn't luck: he was following a rule that forces him to dodge the car and your door every time.",
+    "mechanismCallout_assert": { "doorCount": 100, "hostMode": "random", "metric": "prizeRevealed", "expected": 0.98, "tolerance": 0.02 },
+    "oddsCallout": "Your original door: about 1% it's the car. The other remaining door: about 99%. Same logic as the three-case breakdown, scaled up: if your pick had been the car (1-in-100), the host had 99 goat doors to choose from and leaves one closed at random, so this exact surviving door is only 'the one he happened to leave' about 1 time in 99. But if the car is actually behind this door, he was forced to leave it closed, every single time. Forced-every-time beats random-1-in-99 by a landslide: that's where the 99% comes from, not from 'a guaranteed reveal can't be evidence' (not a general rule; see the biased-host example above, where an equally guaranteed reveal swings from a certain win to a flat 50/50).",
+    "oddsCallout_assert": [
+      { "doorCount": 100, "hostMode": "knowing", "metric": "stayWins", "expected": 0.01, "tolerance": 0.02 },
+      { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 }
+    ],
+    "switchPrompt": "Stay with Door {{pickedDoor}}, or switch to Door {{remainingDoor}}?",
+    "stayButton": "Stay with Door {{pickedDoor}}",
+    "switchButton": "Switch to Door {{remainingDoor}}",
+    "resultWinStay": "You stayed, and Door {{pickedDoor}} had the car. Roughly a 1-in-100 outcome, you beat the odds. It doesn't mean staying is the better strategy, it means you got the rare case.",
+    "resultWinStay_assert": { "doorCount": 100, "hostMode": "knowing", "metric": "stayWins", "expected": 0.01, "tolerance": 0.02 },
+    "resultLoseStay": "You stayed, and Door {{pickedDoor}} was a goat. The car was behind Door {{remainingDoor}} the whole time: about a 99% chance, and it landed.",
+    "resultLoseStay_assert": { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 },
+    "resultWinSwitch": "You switched, and there's the car. The far more likely outcome, about 99 times out of 100, but still just one data point.",
+    "resultWinSwitch_assert": { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 },
+    "resultLoseSwitch": "You switched, and that's a goat. Rare, about 1 time in 100: you nailed your first pick. Doesn't mean switching was wrong, it means you hit the unlikely case.",
+    "resultLoseSwitch_assert": { "doorCount": 100, "hostMode": "knowing", "metric": "stayWins", "expected": 0.01, "tolerance": 0.02 },
+    "playAgainButton": "Play another 100-door round",
+    "continueButton": "Show me this at scale too"
+  },
+
+  "aggregateStats100": {
+    "heading": "Run the 100-door game hundreds of times",
+    "intro": "Same rule, run automatically instead of by hand.",
+    "runButton": "Run {{n}} rounds",
+    "statLine": "Out of {{n}} rounds at 100 doors: staying won {{stayWinPct}}% of the time, switching won {{switchWinPct}}%.",
+    "interpretation": "Staying wins about 1%. Switching wins about 99%. Same rule as the 3-door game, just impossible to miss at this scale.",
+    "interpretation_assert": [
+      { "doorCount": 100, "hostMode": "knowing", "metric": "stayWins", "expected": 0.01, "tolerance": 0.02 },
+      { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 }
+    ],
+    "continueButton": "So what changed between 3 doors and 100 doors?"
+  },
+
+  "bridgeBack": {
+    "heading": "Nothing changed. That's the point.",
+    "body": [
+      "The 100-door round and the 3-door round are the same game. The only thing that changed is how many doors the host had to avoid opening.",
+      "With 3 doors he skips 1. With 100 doors he skips 98. Every skip is a door his rule forbade him to open: never your door, never the car's. All of that forced avoidance piles onto whichever door is left standing.",
+      "The general rule: with N doors, your original pick wins 1 out of N times, switching wins N-1 out of N. At N = 100 that's 99%. At N = 3 it's the same logic, just quieter: 2 out of 3. The size of the number changed. The mechanism never did."
+    ],
+    "body_assert": [
+      null,
+      null,
+      [
+        { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 },
+        { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 }
+      ]
+    ],
+    "continueButton": "Answer my remaining doubts"
+  },
+
+  "faq": {
+    "heading": "Still not fully convinced? Good. Check these",
+    "items": [
+      {
+        "q": "Once the host opens a door, aren't there just two doors left, so isn't it 50/50 between them?",
+        "a": "Two doors doesn't mean two equally likely doors. Rewind to before you picked: three real doors, three equally likely starting points, you picked the car (1/3), one specific goat (1/3), or the other specific goat (1/3). Add the two goat cases and switching wins 2 of 3: the whole aggregate answer, no coin flip needed. A sharper question: does the specific door he opens tell you something extra? Here the coin does matter, not for the aggregate 2/3, but for keeping it intact once you've seen exactly which door opened. The reason isn't 'a guaranteed reveal means nothing' (not true in general, see the biased-host example above, where a fixed preference makes some reveals conclusive and others 50/50). The real reason: on the 1/3 of rounds where he has a choice, he picks with a genuinely fair coin flip. Work the numbers (the two route tables above): whichever door he opens is twice as likely to be a forced case as a coin-flip case, 1/3 versus 2/3, same split as the aggregate answer, now shown to survive conditioning on the exact door.",
+        "a_assert": [
+          { "doorCount": 3, "hostMode": "knowing", "metric": "stayWins", "expected": 0.3333, "tolerance": 0.05 },
+          { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 }
+        ]
+      },
+      {
+        "q": "Does it matter which door I picked first, Door 1 versus Door 2 versus Door 3?",
+        "a": "No, and not just 'by symmetry': before you pick, nothing distinguishes any door, so each has an equal 1-in-N shot. The host's rule doesn't single out door numbers either, it only refers to 'your door' and 'the car's door.' Relabel the doors and the same three cases play out identically, so the split comes out the same no matter where you start."
+      },
+      {
+        "q": "What if the host doesn't actually know where the car is, and just happened to reveal a goat?",
+        "a": "The whole advantage disappears, exactly what the knowing-vs-random host comparison above showed. In the two cases where switching wins (you began on a goat), a host who doesn't know only dodges the car by a coin flip, not a certainty. Half those cases get spoiled outright and never get played. That disproportionately deletes 'switching would have won' rounds, dragging the survivors back to 50/50. The real host never makes that mistake.",
+        "a_assert": { "doorCount": 3, "hostMode": "random", "metric": "noRevealAndSwitchWins", "expected": 0.5, "tolerance": 0.06 }
+      },
+      {
+        "q": "Isn't 2/3 just a trick that only works with a small number of doors?",
+        "a": "It's the opposite: the 3-door case is the hardest one to feel intuitively, which is why it's suspicious. The 100-door version is the same logic (you picked the 1-in-100 car, or one of the 99 goats) and makes it undeniable: run it above and watch switching win about 99%.",
+        "a_assert": { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 }
+      },
+      {
+        "q": "If I just think of it as a brand-new choice between two doors, isn't that a fresh 50/50 event?",
+        "a": "It would be, if both doors had gotten there the same way, but they didn't. The reason isn't 'a guaranteed event carries no information' (not true in general: see the biased-host example above, where a fixed preference swings the odds from a certain win to a flat 50/50). The real reason: the host breaks ties with a genuinely fair coin flip, which only happens in the 1/3 of cases where you started on the car. Because that coin is fair, whichever door he opens is always twice as consistent with 'forced' as with 'coin flip.' That 1-to-2 split holds no matter which door he opens, which is why your door stays at 1-in-N and the other jumps to (N-1)-in-N."
+      },
+      {
+        "q": "This still feels like semantics. Where's the actual mechanism, in one sentence?",
+        "a": "Switching wins 2 of the 3 equally likely starting cases outright, coin flip or not: that's the entire reason it wins overall. The coin's job is narrower: it keeps that same 2-to-1 split intact after you've seen exactly which door opened, because a biased tie-break could make some reveals conclusive and others only 50/50 (see the biased-host example and route tables above).",
+        "a_assert": [
+          { "doorCount": 3, "hostMode": "knowing", "metric": "stayWins", "expected": 0.3333, "tolerance": 0.05 },
+          { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 }
+        ]
+      }
+    ]
+  },
+
+  "recap": {
+    "heading": "The short version",
+    "bullets": [
+      "Your first pick is locked at 1-in-N odds the instant you make it. The reveal doesn't move that number, not because a guaranteed event can never be evidence (it can, in general, the biased-host example above proves it), but because of one rule: on a free choice, the host flips a genuinely fair coin. That makes whichever door he opens twice as likely to mean 'the other door has the car' as 'yours does,' no matter which door, see the route tables above.",
+      "The host knows where the prize is and is never allowed to open your door or the prize's door.",
+      "Three equally likely starting cases (car, or one of two goats), switching wins 2 of them: the entire proof, no formalism required.",
+      "Switching inherits almost all the odds your first pick didn't have: in 2 of 3 cases the host has zero choice about which door to leave closed, and it's the car's.",
+      "At 3 doors that's a 2/3 edge. At 100 doors it's a 99% edge. Same three-case logic, different volume."
+    ],
+    "bullets_assert": [
+      null,
+      null,
+      { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+      { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+      [
+        { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+        { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 }
+      ]
+    ]
+  },
+
+  "gutCheckFinal": {
+    "heading": "Same question as before. Any change?",
+    "prompt": "What gives you the best odds of winning the car?",
+    "options": [
+      { "id": "fifty", "label": "It doesn't matter: it's 50/50 either way" },
+      { "id": "stay", "label": "Staying is better" },
+      { "id": "switch", "label": "Switching is better" },
+      { "id": "unsure", "label": "Not sure" }
+    ],
+    "confirmButton": "Lock in my final answer",
+    "comparison": {
+      "changedToCorrect": "You started at \"{{initialLabel}}\" and landed on \"switching is better.\" Not us telling you, you watched it: switching won roughly 2 out of 3 rounds at 3 doors and roughly 99 out of 100 at 100 doors. Not every round went that way, you probably lost a few, exactly what the math predicts. It's the pattern across hundreds of rounds, and the three-case logic behind it, that's undeniable.",
+      "changedToCorrect_assert": [
+        { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+        { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 }
+      ],
+      "stayedCorrect": "You said \"switching is better\" from the start, and everything you played confirms it: switching wins about 2 out of 3 at 3 doors, about 99 out of 100 at 100 doors. You could have predicted both from the three-case breakdown alone.",
+      "stayedCorrect_assert": [
+        { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 },
+        { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 }
+      ],
+      "stillUnconvinced": "You're still at \"{{finalLabel}}.\" Go back to the three-case breakdown: you picked the car (1/3) or one of the two goats (2/3); in the goat cases the host has zero choice about which door to leave shut, and it's the car's. Then watch the 98-door reveal again: 98 doors, every one dodging the car, is what the rule guarantees, not luck, and that's why switching wins 2 (or 99) times out of 3 (or 100) overall. But dodging the car alone doesn't decide everything; a biased host could dodge the car every round too and still mislead you about which specific door means what (see the worked example above). What actually keeps the odds honest, right down to the specific door that opened, is the fair coin on the host's one free choice. Equal odds on the tie-break, not just the guaranteed dodge, is the piece doing the real work.",
+      "stillUnconvinced_assert": [
+        { "doorCount": 3, "hostMode": "knowing", "metric": "stayWins", "expected": 0.3333, "tolerance": 0.05 },
+        { "doorCount": 3, "hostMode": "knowing", "metric": "switchWins", "expected": 0.6667, "tolerance": 0.05 }
+      ]
+    }
+  },
+
+  "footer": {
+    "text": "The Monty Hall problem, played out rather than just explained.",
+    "note": "Every round on this page uses the same rule: the host always knows where the prize is, and always avoids both your door and the prize's door when he opens one."
+  }
+}

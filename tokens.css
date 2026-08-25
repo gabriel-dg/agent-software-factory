@@ -1,0 +1,426 @@
+/* ==========================================================================
+   Monty Hall Interactive Explainer — Design Tokens
+   Owner: art-director. Custom properties only. No selectors, no rules.
+   Every color token is a literal #RRGGBB value (no var() indirection for
+   color) so contrast can be independently recomputed from this file alone.
+   See DESIGN.md for rationale and the machine-parseable contrast ledger.
+   ========================================================================== */
+
+:root {
+
+  /* --------------------------------------------------------------------
+     COLOR — Surfaces
+     -------------------------------------------------------------------- */
+  --color-bg-page: #F7F4EE;          /* warm paper — page background */
+  --color-bg-surface: #FFFFFF;       /* cards, panels, doors' container */
+  --color-bg-surface-alt: #EFEAE0;   /* alt rows, secondary panels */
+  --color-bg-inverse: #1C2130;       /* dark sections (table header, footer) */
+  --color-bg-inverse-alt: #262C40;   /* dark card on inverse background */
+
+  /* --------------------------------------------------------------------
+     COLOR — Text
+     -------------------------------------------------------------------- */
+  --color-text-primary: #20232E;         /* headings + body on light surfaces */
+  --color-text-secondary: #4B5163;       /* captions, meta, dynamic values */
+  --color-text-inverse: #F5F2EA;         /* headings + body on dark surfaces */
+  --color-text-inverse-secondary: #C7CBD9; /* captions on dark surfaces */
+  --color-text-on-gold: #1C1400;         /* text on the prize/gold surface */
+
+  /* --------------------------------------------------------------------
+     COLOR — Borders / dividers (generic chrome)
+     -------------------------------------------------------------------- */
+  --color-border-subtle: #DAD3C2;
+  --color-border-default: #B7AF9A;
+
+  /* --------------------------------------------------------------------
+     COLOR — Brand / interactive
+     -------------------------------------------------------------------- */
+  --color-accent-primary: #4A3AA8;        /* primary actions, "key" callout */
+  --color-accent-primary-hover: #3B2D8A;
+  --color-accent-secondary: #0F6E63;      /* teal — "knowing host" / switch thesis */
+  --color-accent-secondary-hover: #0B564D;
+  --color-focus-ring: #1768E0;
+
+  /* --------------------------------------------------------------------
+     COLOR — Buttons
+     -------------------------------------------------------------------- */
+  --color-button-primary-bg: #4A3AA8;
+  --color-button-primary-bg-hover: #3B2D8A;
+  --color-button-primary-text: #FFFFFF;
+
+  --color-button-secondary-bg: #FFFFFF;
+  --color-button-secondary-border: #4A3AA8;
+  --color-button-secondary-text: #4A3AA8;
+  --color-button-secondary-bg-hover: #ECE9F9;
+
+  /* --------------------------------------------------------------------
+     COLOR — Links
+     No element on the page is an <a> or link-styled text (every
+     clickable control is a <button>), so there is no base link-text
+     color token here. --color-link-text-hover below is kept only as a
+     reserved-for-future value (see DESIGN.md §5) in case a real link
+     appears later; it is not a hover state of anything currently
+     defined and is not in the contrast ledger for that reason.
+     -------------------------------------------------------------------- */
+  --color-link-text-hover: #1E4578;
+
+  /* --------------------------------------------------------------------
+     COLOR — Poll / gut-check options (Beat 0 and Beat 9)
+     -------------------------------------------------------------------- */
+  --color-option-unselected-bg: #FFFFFF;
+  --color-option-unselected-border: #B7AF9A;
+  --color-option-unselected-text: #20232E;
+  --color-option-selected-bg: #4A3AA8;
+  --color-option-selected-border: #241D57;
+  --color-option-selected-text: #FFFFFF;
+
+  /* --------------------------------------------------------------------
+     COLOR — Callouts
+     Map to copy.json callout keys / components as follows:
+       callout-key      -> rules.mechanismCallout, round100.mechanismCallout,
+                            mechanismContrast.whyYourDoorDoesntMove.fairnessNote,
+                            gutCheckFinal.comparison.* (all three variants,
+                            rendered in the final recap comparison box),
+                            and ol.rules-list li.rule-host (the forced-choice
+                            rule item highlighted inline in the rules list).
+                            As of the Beat-2 door-eligibility fix below, this
+                            triplet is NOT used on any door element: doors
+                            communicate "not clickable right now" with
+                            --opacity-control-disabled instead, never with
+                            this color family, so violet keeps its single
+                            page-wide meaning ("clickable, or the losing
+                            strategy") without exception.
+       callout-reminder -> round3.hostKnowledgeReminder
+       callout-stat     -> round100.oddsCallout, aggregateStats* statLine emphasis
+       callout-neutral  -> faq answers, generic body callouts
+     -------------------------------------------------------------------- */
+  --color-callout-key-bg: #ECE9F9;
+  --color-callout-key-border: #4A3AA8;
+  --color-callout-key-text: #241D57;
+
+  --color-callout-reminder-bg: #E4EEF9;
+  --color-callout-reminder-border: #2C5FA8;
+  --color-callout-reminder-text: #14304F;
+
+  --color-callout-stat-bg: #FBEBC8;
+  --color-callout-stat-border: #A66A0A;
+  --color-callout-stat-text: #3D2600;
+
+  --color-callout-neutral-bg: #EFEAE0;
+  --color-callout-neutral-border: #B7AF9A;
+  --color-callout-neutral-text: #20232E;
+
+  /* --------------------------------------------------------------------
+     INTERACTION STATES — non-color "not clickable right now" modifier
+     This is generic, page-wide disabled-affordance styling: it says a
+     control cannot be clicked right now, and nothing more. It applies to
+     every disabled control on the page (.btn-primary:disabled,
+     .btn-secondary:disabled) identically. It is NOT sufficient, by
+     itself, to carry the Beat-2 door-ineligibility fact — see the
+     dedicated COLOR — Door ineligibility badge block below for the
+     token triplet that carries that separate, game-logic meaning. Never
+     used as a substitute for one of the seven documented door/control
+     state triplets.
+     -------------------------------------------------------------------- */
+  --opacity-control-disabled: 0.5;
+  --cursor-disabled: not-allowed;
+
+  /* --------------------------------------------------------------------
+     COLOR — Door ineligibility badge (Beat 2 reveal moment)
+     Carries one specific game-logic claim, distinct from every other
+     door token: "the host's rule structurally forbade opening this
+     door" — not "you can't click this" (that's --opacity-control-disabled
+     / --cursor-disabled above, a separate UI-interaction fact layered
+     independently) and not "this is my pick" / "this is what got
+     opened" (that's --icon-picked-content / --icon-host-opened-content,
+     a separate identity fact). All three facts can be true of the same
+     door at the same time and are carried by three independent visual
+     channels so none of them is lost.
+     Deliberately its own achromatic "ink stamp" family — not violet
+     (that hue means "clickable" everywhere else on this page and must
+     never appear on a non-interactive door), not the teal/red-orange
+     host-mode hues, not amber, not the picked-door blue, and not the
+     muted olive-tan of the host-opened door state. A desaturated dark
+     graphite badge reads as a stamped annotation ("ruled out by
+     definition") rather than as a color-coded game state, echoing the
+     page's "proof" framing rather than its game-show framing. See
+     DESIGN.md §1 item 4.
+     -------------------------------------------------------------------- */
+  --color-door-ineligible-badge-bg: #33363E;
+  --color-door-ineligible-badge-border: #9A96A6;
+  --color-door-ineligible-badge-text: #F5F2EA;
+
+  /* --------------------------------------------------------------------
+     COLOR — Door states
+     Four distinct door states, each with its own bg/border/text triplet
+     so ui-engineer never has to fake a state by opacity alone.
+     -------------------------------------------------------------------- */
+  /* Unopened, not yet picked */
+  --color-door-unselected-bg: #E7E2D4;
+  --color-door-unselected-border: #726D60; /* darkened from #B7AF9A: that value only cleared ~2.2:1 against the door grid's actual background (--color-bg-surface, which .door-grid-3/.door-grid-100 always paint regardless of the enclosing section), failing AA-UI's 3:1 minimum */
+  --color-door-unselected-text: #2B2E38;
+
+  /* The player's own picked door (before and after reveal framing) */
+  --color-door-picked-bg: #DCE6F7;
+  --color-door-picked-border: #2C5FA8;
+  --color-door-picked-text: #12233F;
+
+  /* A door the host has opened (always a goat, always de-emphasized) */
+  --color-door-host-opened-bg: #D9D4C6;
+  --color-door-host-opened-border: #767063; /* darkened from #8B8474 for a stronger AA-UI margin against the door grid's actual background (--color-bg-surface) */
+  --color-door-host-opened-text: #4A4638;
+
+  /* The single remaining unopened door (the one that matters after reveal) */
+  --color-door-remaining-bg: #FBEBC8;
+  --color-door-remaining-border: #A66A0A;
+  --color-door-remaining-text: #3D2600;
+
+  /* --------------------------------------------------------------------
+     COLOR — Final reveal states
+     Prize and goat are differentiated by more than hue: distinct shape
+     (radius), distinct border style (solid vs dashed), a background
+     pattern on the goat card, and distinct icon glyphs — see the
+     ICONOGRAPHY and SHAPE sections below. Do not rely on bg color alone.
+     -------------------------------------------------------------------- */
+  --color-reveal-prize-bg: #F5C518;
+  --color-reveal-prize-border: #6E4D00;
+  --color-reveal-prize-text: #1C1400;
+
+  --color-reveal-goat-bg: #DDE3E0;
+  --color-reveal-goat-border: #4B5D57;
+  --color-reveal-goat-text: #1B241F;
+
+  /* --------------------------------------------------------------------
+     COLOR — Host-mode contrast (Beat 3: knowing host vs random host)
+     Knowing host = teal/solid/lock. Random host = red-orange/dashed/dice.
+     -------------------------------------------------------------------- */
+  --color-host-knowing-bg: #E3F3EF;
+  --color-host-knowing-border: #0F6E63;
+  --color-host-knowing-text: #063B34;
+
+  --color-host-random-bg: #FBEAE3;
+  --color-host-random-border: #B23A1F;
+  --color-host-random-text: #5A1B0B;
+
+  /* Spoiled round: random host accidentally reveals the prize outright */
+  --color-spoiled-bg: #FCE3C6;
+  --color-spoiled-border: #A6480A;
+  --color-spoiled-text: #4A1E00;
+
+  /* --------------------------------------------------------------------
+     COLOR — Three-case enumeration table (Beat 3, mechanismContrast.threeCases)
+     "Forced" rows (host has no choice) reuse the knowing-host teal to tie
+     certainty together visually; "free choice" row uses the same amber
+     family as the remaining-door/odds-callout to foreshadow the payoff.
+     -------------------------------------------------------------------- */
+  --color-case-forced-bg: #E3F3EF;
+  --color-case-forced-border: #0F6E63;
+  --color-case-forced-text: #063B34;
+
+  --color-case-free-bg: #FDF1D6;
+  --color-case-free-border: #A66A0A;
+  --color-case-free-text: #3D2600;
+
+  --color-table-header-bg: #1C2130;
+  --color-table-header-text: #F5F2EA;
+  --color-table-row-alt-bg: #EFEAE0;
+
+  /* --------------------------------------------------------------------
+     COLOR — Stats / data visualization (aggregate win-rate bars)
+     Stay = violet, Switch = teal: a hue AND saturation/family difference,
+     reinforced by --pattern-stat-stay-bar below for non-hue distinction.
+     -------------------------------------------------------------------- */
+  --color-stat-stay-bar-bg: #5D4E96;
+  --color-stat-stay-bar-text: #FFFFFF;
+  --color-stat-switch-bar-bg: #0F6E63;
+  --color-stat-switch-bar-text: #FFFFFF;
+  --color-stat-bar-track-bg: #E7E2D4;
+
+  /* --------------------------------------------------------------------
+     ICONOGRAPHY — content-string tokens for use with `content: var(...)`
+     Prize/goat/case/host distinctions are carried by glyph, not color.
+     -------------------------------------------------------------------- */
+  --icon-prize-content: "\1F697";        /* 🚗 */
+  --icon-goat-content: "\1F410";         /* 🐐 */
+  --icon-picked-content: "\2605";        /* ★ */
+  --icon-host-opened-content: "\2715";   /* ✕ */
+  --icon-door-ineligible-content: "\2696"; /* ⚖ — Beat 2 badge only: "this
+                                             door was structurally forbidden
+                                             from being the host's reveal."
+                                             Scoped to exactly the two doors
+                                             this is true of (the reader's
+                                             pick and the host-opened door);
+                                             never reused for "not clickable"
+                                             (that stays non-visual/opacity)
+                                             and never reused for host-mode
+                                             certainty (that stays 🔒, see
+                                             --icon-host-knowing-content) */
+  --icon-remaining-content: "\25C6";     /* ◆ */
+  --icon-host-knowing-content: "\1F512"; /* 🔒 */
+  --icon-host-random-content: "\1F3B2";  /* 🎲 */
+  --icon-case-forced-content: "\1F512";  /* 🔒 */
+  --icon-case-free-content: "\1F500";    /* 🔀 */
+  --icon-spoiled-content: "\1F4A5";      /* 💥 — spoiled round (single-alert
+                                             AND per-cell round-grid use;
+                                             same meaning both places, not a
+                                             new one, see DESIGN.md §1 item 5 */
+  --icon-round-played-content: "\2713";  /* ✓ — round-grid "played normally"
+                                             cell, scoped only to
+                                             .round-cell-played; never reused
+                                             elsewhere (avoids the 3-meanings
+                                             problem the 🔒 glyph had) */
+
+  /* --------------------------------------------------------------------
+     SHAPE / PATTERN — non-hue differentiation for prize vs goat, for
+     knowing-host vs random-host, and for round-grid played vs spoiled
+     cells (Beat 3's 500-cell Host B visualization)
+     -------------------------------------------------------------------- */
+  --radius-badge-prize: var(--radius-pill);   /* circular badge */
+  --radius-badge-goat: var(--radius-md);      /* rounded-square badge */
+  --border-style-prize: solid;
+  --border-style-goat: dashed;
+  --border-style-host-knowing: solid;
+  --border-style-host-random: dashed;
+
+  --radius-round-cell-played: 2px;            /* square-ish, "ordinary" cell */
+  --radius-round-cell-spoiled: var(--radius-circle); /* circular, "notable event" cell */
+  --border-style-round-played: solid;
+  --border-style-round-spoiled: dashed;
+
+  --radius-badge-ineligible: var(--radius-pill); /* small circular "stamp",
+                                             distinct from the square door
+                                             tile it sits on */
+  --border-style-door-ineligible: solid;
+  --border-width-door-ineligible: var(--border-width-thin);
+
+  --pattern-reveal-goat: repeating-linear-gradient(
+    135deg,
+    rgba(27, 36, 31, 0.08) 0px,
+    rgba(27, 36, 31, 0.08) 4px,
+    transparent 4px,
+    transparent 10px
+  );
+  --pattern-reveal-prize: none;
+
+  --pattern-stat-stay-bar: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.20) 0px,
+    rgba(255, 255, 255, 0.20) 5px,
+    transparent 5px,
+    transparent 11px
+  );
+  --pattern-stat-switch-bar: none;
+
+  /* --------------------------------------------------------------------
+     TYPOGRAPHY
+     System font stacks only — the page must open from the filesystem
+     with no network/build dependency for fonts to render correctly.
+     -------------------------------------------------------------------- */
+  --font-family-heading: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-family-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-md: 1.125rem;   /* 18px */
+  --font-size-lg: 1.375rem;   /* 22px */
+  --font-size-xl: 1.75rem;    /* 28px */
+  --font-size-2xl: 2.25rem;   /* 36px */
+  --font-size-3xl: 3rem;      /* 48px */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.15;
+  --line-height-heading: 1.25;
+  --line-height-body: 1.6;
+  --line-height-relaxed: 1.75;
+
+  --letter-spacing-tight: -0.01em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.04em;
+
+  /* --------------------------------------------------------------------
+     SPACING SCALE (8px base with two finer increments)
+     -------------------------------------------------------------------- */
+  --space-3xs: 0.25rem;  /* 4px */
+  --space-2xs: 0.5rem;   /* 8px */
+  --space-xs: 0.75rem;   /* 12px */
+  --space-sm: 1rem;      /* 16px */
+  --space-md: 1.5rem;    /* 24px */
+  --space-lg: 2rem;      /* 32px */
+  --space-xl: 3rem;      /* 48px */
+  --space-2xl: 4rem;     /* 64px */
+  --space-3xl: 6rem;     /* 96px */
+
+  /* --------------------------------------------------------------------
+     RADIUS
+     -------------------------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+
+  /* --------------------------------------------------------------------
+     BORDERS
+     -------------------------------------------------------------------- */
+  --border-width-hairline: 1px;
+  --border-width-thin: 2px;
+  --border-width-thick: 3px;
+  --border-width-emphasis: 4px;
+
+  /* --------------------------------------------------------------------
+     SHADOW / ELEVATION
+     -------------------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px rgba(28, 33, 48, 0.08);
+  --shadow-md: 0 4px 12px rgba(28, 33, 48, 0.12);
+  --shadow-lg: 0 12px 32px rgba(28, 33, 48, 0.18);
+  --shadow-focus: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 45%, transparent);
+
+  /* --------------------------------------------------------------------
+     MOTION
+     -------------------------------------------------------------------- */
+  --duration-instant: 100ms;
+  --duration-fast: 180ms;
+  --duration-base: 280ms;
+  --duration-slow: 480ms;
+  --duration-door-open: 600ms;
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-emphasize: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* --------------------------------------------------------------------
+     LAYOUT
+     -------------------------------------------------------------------- */
+  --content-max-width: 46rem;
+  --content-max-width-wide: 64rem;
+  --container-padding-inline: var(--space-md);
+
+  --door-size-lg: 8rem;     /* 3-door rounds */
+  --door-size-sm: 4.5rem;   /* 100-door round */
+  --grid-gap-doors-100: var(--space-3xs);
+  --grid-gap-doors-3: var(--space-lg);
+  --size-reveal-card: 6.5rem;          /* prize/goat reveal card width & height */
+  --max-width-door-grid-100: 40rem;    /* cap on the 100-door grid's width */
+
+  /* Beat 3's 500-cell Host B round grid (.round-grid / .round-cell /
+     .round-grid-legend .swatch). Component-specific dimension tokens,
+     same category as --door-size-lg/sm and --size-reveal-card above:
+     sized to this one fixed-count grid layout, not part of the shared
+     --space-*/--font-size-* scales. See DESIGN.md §4 for why these are
+     minted rather than left as bare literals in the CSS. */
+  --max-width-round-grid: 26rem;       /* cap on the round grid's width */
+  --size-round-cell: 0.85rem;          /* round-grid cell & legend swatch width/height */
+  --font-size-round-cell: 0.5rem;      /* glyph size inside a single round-grid cell */
+
+  /* --------------------------------------------------------------------
+     Z-INDEX
+     -------------------------------------------------------------------- */
+  --z-index-base: 0;
+  --z-index-sticky: 10;
+  --z-index-overlay: 100;
+  --z-index-modal: 1000;
+}
