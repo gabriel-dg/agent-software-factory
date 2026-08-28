@@ -1,14 +1,35 @@
 # Agent Software Factory
 
-This repository is a single-page interactive explainer of the Monty Hall
-problem, built entirely by a pipeline of specialized Claude Code agents
-coordinated by an orchestrator session, rather than by one model writing the
-whole thing in one pass. The explainer itself is the artifact; the pipeline
-that built it, defined in [`CLAUDE.md`](CLAUDE.md) and the eight agent
-definitions in [`.claude/agents/`](.claude/agents/), is the actual subject of
-this repository. Every claim the page makes about the odds is checked by
-code against a real simulation, and every color pair it renders is checked
-against a computed WCAG contrast ratio, not just asserted in prose.
+**TL;DR:** This is a report on running an eight-agent Claude Code pipeline,
+with separate roles, exclusive file ownership, and independent verification,
+end to end to find out how a multi-agent build actually behaves in
+practice, using a Monty Hall explainer as the test case. First full run:
+$31.81 API-equivalent, 49% of it spent on the orchestrator's own
+coordination, not on any agent's actual work. That bought nine real bugs,
+three of which no single-session build would have surfaced. To look
+further: open `index.html` for the page, read `CLAUDE.md` and
+`.claude/agents/` for the pipeline, read `docs/LESSONS.md` for the
+generalized rules.
+
+## The experiment
+
+The question: does a role-separated agent team with independent
+verification catch things a single session does not, and what does that
+cost relative to one session doing the same work? Monty Hall was chosen as
+the test case because its answer is settled by simulation rather than
+opinion, so when two reviewers disagree, a script can decide it instead of
+an argument. The answer: yes, the pipeline caught real bugs a single pass
+plausibly would have missed, including three that needed a specific kind of
+cross-checking no single session performs. It cost several times what a
+single well-prompted session would have cost for a comparable page, and
+that is not a marginal overhead, it is the headline result.
+
+This repository contains the pipeline definition, [`CLAUDE.md`](CLAUDE.md)
+and the eight agent definitions in [`.claude/agents/`](.claude/agents/), and
+the Monty Hall explainer it produced. Every claim the page makes about the
+odds is checked by code against a real simulation, and every color pair it
+renders is checked against a computed WCAG contrast ratio, not just
+asserted in prose.
 
 To run it: open `index.html` in a browser. No build step, no server, no
 npm install required for the page itself.
@@ -133,6 +154,9 @@ claims exist. It caught exactly that bug twice in this project (below).
 These are bugs an earlier pipeline stage, or a human skimming the same
 text, plausibly would not have caught, because each one reads as correct on
 a casual pass and only breaks under a specific kind of scrutiny.
+
+These are the evidence for the answer given above, and they are specific to
+this domain on purpose.
 
 - **A false general law stated as if it were a proof.** An early draft
   explained why the host's reveal doesn't update your own door's odds with
