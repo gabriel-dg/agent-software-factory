@@ -11,6 +11,8 @@ further: open `index.html` for the page, read `CLAUDE.md` and
 `.claude/agents/` for the pipeline, read `docs/LESSONS.md` for the
 generalized rules.
 
+[Open the live demo](https://gabriel-dg.github.io/agent-software-factory/) to try the built explainer in your browser, nothing to install.
+
 ## The experiment
 
 The question: does a role-separated agent team with independent
@@ -31,8 +33,7 @@ odds is checked by code against a real simulation, and every color pair it
 renders is checked against a computed WCAG contrast ratio, not just
 asserted in prose.
 
-To run it: open `index.html` in a browser. No build step, no server, no
-npm install required for the page itself.
+To run it: visit the [live demo](https://gabriel-dg.github.io/agent-software-factory/), or clone the repo and open `index.html` in a browser. No build step, no server, no npm install required for the page itself.
 
 ![The three-door round: pick a door, the host opens one, then stay or switch.](docs/img/three-door-round.png)
 
