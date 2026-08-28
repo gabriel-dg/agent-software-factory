@@ -145,6 +145,13 @@
   function renderFooter() {
     document.getElementById("footer-text").textContent = copy.footer.text;
     document.getElementById("footer-note").textContent = copy.footer.note;
+    // Colophon: credits/meta line about how the page itself was produced.
+    // Rendered as plain text (no <a> element) -- DESIGN.md documents that
+    // no link-text color token exists on this page (every clickable
+    // element is a <button>, and --color-link-text was removed from
+    // tokens.css entirely), so the URL inside copy.colophon.text is left
+    // as literal text rather than introducing an unstyled/unverified link.
+    document.getElementById("colophon-text").textContent = copy.colophon.text;
   }
 
   // -----------------------------------------------------------------------
@@ -968,6 +975,7 @@
       }
 
       document.getElementById("gutcheck-comparison").innerHTML = '<div class="callout callout-key">' + msg + "</div>";
+      unlock("site-footer", false);
     });
   }
 

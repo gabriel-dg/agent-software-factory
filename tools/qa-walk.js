@@ -582,11 +582,28 @@ async function main() {
     "beat-agg100",
     "beat-bridge",
     "beat-faq",
-    "beat-recap"
+    "beat-recap",
+    // Bug fix under test: the footer previously had no .locked gating and
+    // was visible on load, right after the initial gut-check poll, before
+    // the reader did anything. It now carries
+    // class="site-footer locked" id="site-footer" and must be hidden at
+    // load exactly like every other not-yet-reached beat.
+    "site-footer"
   ];
   for (const id of lockedAtLoad) {
     await assertLocked(page, id, "load", `#${id}`);
   }
+
+  // Explicit, element-level (not just class-level) visibility checks for the
+  // footer's two pieces of content -- the host-rule note and the newly
+  // added colophon credits paragraph -- since both are newly reachable in
+  // this build and are exactly the kind of "content that should only
+  // appear after an interaction" the load-time sweep exists to catch.
+  await assertNotVisible(page, "#site-footer", "load", "footer (site-footer)");
+  await assertNotVisible(page, "#footer-text", "load", "footer.text");
+  await assertNotVisible(page, "#footer-note", "load", "footer.note (host-rule note)");
+  await assertNotVisible(page, "#colophon-text", "load", "colophon.text");
+
   await checkNoPlaceholders(page, "load");
 
   // =======================================================================
@@ -1226,7 +1243,7 @@ async function main() {
       "Does it matter which door I picked first",
       "What if the host doesn't actually know where the car is",
       "Isn't 2/3 just a trick that only works with a small number of doors?",
-      "If I re-frame it as a fresh choice between two doors",
+      "If I just think of it as a brand-new choice between two doors, isn't that a fresh 50/50 event?",
       "This still feels like semantics."
     ];
     const answerSnippets = [
@@ -1317,6 +1334,31 @@ async function main() {
     }
 
     await shot(page, "beat9-recap-final.png");
+
+    // Footer (host-rule note + colophon) must stay locked/hidden until the
+    // reader completes the final gut-check poll's confirm handler. viz.js's
+    // renderRecap() now calls unlock("site-footer", false) here, right
+    // after the comparison message is shown -- previously the footer had no
+    // .locked gating at all and was visible from initial load.
+    await assertUnlocked(page, "site-footer", "beat9", "#site-footer (footer + colophon, unlocked in gutcheck-final-confirm handler)");
+    await page.waitForSelector("#site-footer:not(.locked)", { timeout: DEFAULT_TIMEOUT });
+
+    const footerVisibleNow = await page.locator("#site-footer").isVisible();
+    if (!footerVisibleNow) {
+      fail(
+        "beat9",
+        "#site-footer",
+        "footer (including colophon) is actually rendered-visible after the final gut-check confirm, not merely missing the .locked class",
+        "#site-footer .locked class removed but element still not visible per getComputedStyle/Playwright isVisible()",
+        await shot(page, "FAIL-beat9-footer-not-visible.png")
+      );
+    }
+
+    await assertIncludes(page, "#site-footer", "The Monty Hall problem, played out rather than just explained.", "beat9", "footer.text");
+    await assertIncludes(page, "#site-footer", "Every round on this page uses the same rule", "beat9", "footer.note (host-rule note)");
+    await assertIncludes(page, "#site-footer", "This page was written, built, and verified by a team of Claude Code agents", "beat9", "colophon.text (new colophon paragraph)");
+
+    await shot(page, "beat9-footer-unlocked.png");
     await checkNoPlaceholders(page, "beat9");
   } catch (e) {
     fail("beat9", "beat-recap", "beat 9 interaction completes without exception", String(e), await shot(page, "FAIL-beat9-exception.png"));

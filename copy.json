@@ -334,5 +334,9 @@
   "footer": {
     "text": "The Monty Hall problem, played out rather than just explained.",
     "note": "Every round on this page uses the same rule: the host always knows where the prize is, and always avoids both your door and the prize's door when he opens one."
+  },
+
+  "colophon": {
+    "text": "This page was written, built, and verified by a team of Claude Code agents, each with a separate role. Every number shown on the page is checked against a running simulation by an agent that did not write that number or its surrounding copy. The pipeline that built it is at https://github.com/gabriel-dg/agent-software-factory."
   }
 }

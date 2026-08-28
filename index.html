@@ -49,7 +49,7 @@
   section.beat.wrap-wide { max-width: var(--content-max-width-wide); }
   section.beat:not(.wrap-wide) { max-width: var(--content-max-width); }
   section.beat:nth-of-type(even) { background: var(--color-bg-surface-alt); }
-  section.beat.locked { display: none; }
+  section.beat.locked, footer.site-footer.locked { display: none; }
 
   .site-header { padding: var(--space-2xl) 0 var(--space-lg) 0; }
   .site-header h1 { font-size: var(--font-size-3xl); }
@@ -413,6 +413,27 @@
   /* footer */
   footer.site-footer { background: var(--color-bg-inverse); color: var(--color-text-inverse); padding: var(--space-xl) 0; margin-top: var(--space-lg); }
   footer.site-footer .note { color: var(--color-text-inverse-secondary); font-size: var(--font-size-sm); margin-top: var(--space-2xs); }
+  /* Colophon: a credits/meta line about how the page itself was produced,
+     not a teaching beat. Deliberately the most visually subordinate text
+     in the footer -- smaller than .note (--font-size-xs vs --font-size-sm)
+     and set off from the rest of the footer by its own top divider and
+     extra top margin, so it reads as trailing small print, not as part of
+     the page's argument. Reuses the existing, already-verified
+     --color-text-inverse-secondary ON --color-bg-inverse pair (DESIGN.md
+     Contrast pairs ledger, 9.90 AA-NORMAL) -- the same pair already used
+     for .note just above it -- rather than any new color. The divider
+     line reuses --color-bg-inverse-alt (an existing surface token, not a
+     new hex value) purely as a decorative separator, the same way
+     --color-border-subtle/--color-border-default are used elsewhere as
+     plain dividers with no ledger entry of their own. */
+  footer.site-footer .colophon {
+    color: var(--color-text-inverse-secondary);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-body);
+    margin-top: var(--space-lg);
+    padding-top: var(--space-sm);
+    border-top: var(--border-width-hairline) solid var(--color-bg-inverse-alt);
+  }
   .footer-card {
     background: var(--color-bg-inverse-alt);
     color: var(--color-text-inverse);
@@ -447,12 +468,13 @@
   <section class="beat locked wrap" id="beat-recap"></section>
 </main>
 
-<footer class="site-footer">
+<footer class="site-footer locked" id="site-footer">
   <div class="wrap">
     <div class="footer-card">
       <p id="footer-text"></p>
     </div>
     <p class="note" id="footer-note"></p>
+    <p class="colophon" id="colophon-text"></p>
   </div>
 </footer>
 
@@ -726,7 +748,7 @@
         "a_assert": { "doorCount": 100, "hostMode": "knowing", "metric": "switchWins", "expected": 0.99, "tolerance": 0.02 }
       },
       {
-        "q": "If I re-frame it as a fresh choice between two doors, isn't that a new 50/50 event?",
+        "q": "If I just think of it as a brand-new choice between two doors, isn't that a fresh 50/50 event?",
         "a": "It would be, if both doors had gotten there the same way, but they didn't. The reason isn't 'a guaranteed event carries no information' (not true in general: see the biased-host example above, where a fixed preference swings the odds from a certain win to a flat 50/50). The real reason: the host breaks ties with a genuinely fair coin flip, which only happens in the 1/3 of cases where you started on the car. Because that coin is fair, whichever door he opens is always twice as consistent with 'forced' as with 'coin flip.' That 1-to-2 split holds no matter which door he opens, which is why your door stays at 1-in-N and the other jumps to (N-1)-in-N."
       },
       {
@@ -793,6 +815,10 @@
   "footer": {
     "text": "The Monty Hall problem, played out rather than just explained.",
     "note": "Every round on this page uses the same rule: the host always knows where the prize is, and always avoids both your door and the prize's door when he opens one."
+  },
+
+  "colophon": {
+    "text": "This page was written, built, and verified by a team of Claude Code agents, each with a separate role. Every number shown on the page is checked against a running simulation by an agent that did not write that number or its surrounding copy. The pipeline that built it is at https://github.com/gabriel-dg/agent-software-factory."
   }
 }
 </script>
