@@ -40,6 +40,33 @@
     return Math.floor(Math.random() * 1e9);
   }
 
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
+  // Auto-linkifies the first http(s):// URL found in `text`, HTML-escaping
+  // everything (including the URL itself, belt-and-suspenders since this
+  // is trusted first-party copy) so no injection risk is introduced by
+  // switching this render from .textContent to .innerHTML. No new color
+  // token: the resulting <a> inherits its surrounding text color (see
+  // ".colophon a" in index.html's <style> block) so no new contrast pair
+  // is created here.
+  function linkifyFirstUrl(text) {
+    var urlRegex = /(https?:\/\/[^\s]+)/;
+    var match = text.match(urlRegex);
+    if (!match) return escapeHtml(text);
+    var before = text.slice(0, match.index);
+    var url = match[0];
+    var after = text.slice(match.index + url.length);
+    return (
+      escapeHtml(before) +
+      '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(url) + "</a>" +
+      escapeHtml(after)
+    );
+  }
+
   // Reads a --duration-* token's literal value out of tokens.css at
   // runtime (rather than hardcoding a millisecond number in JS) so the
   // cadence stays mechanically tied to the one token authored there, the
@@ -146,12 +173,15 @@
     document.getElementById("footer-text").textContent = copy.footer.text;
     document.getElementById("footer-note").textContent = copy.footer.note;
     // Colophon: credits/meta line about how the page itself was produced.
-    // Rendered as plain text (no <a> element) -- DESIGN.md documents that
-    // no link-text color token exists on this page (every clickable
-    // element is a <button>, and --color-link-text was removed from
-    // tokens.css entirely), so the URL inside copy.colophon.text is left
-    // as literal text rather than introducing an unstyled/unverified link.
-    document.getElementById("colophon-text").textContent = copy.colophon.text;
+    // The repo URL inside copy.colophon.text is auto-linkified (see
+    // linkifyFirstUrl above) rather than left as literal text. No new
+    // link-text color token is introduced -- DESIGN.md documents that
+    // --color-link-text was removed from tokens.css entirely, so the
+    // anchor simply inherits --color-text-inverse-secondary from its
+    // surrounding text (already verified against --color-bg-inverse in
+    // DESIGN.md's contrast ledger for this exact spot) and is set apart
+    // visually with an underline only (".colophon a" in index.html).
+    document.getElementById("colophon-text").innerHTML = linkifyFirstUrl(copy.colophon.text);
   }
 
   // -----------------------------------------------------------------------
@@ -284,19 +314,24 @@
   //       game-logic fact, carried by this dedicated badge (its own
   //       dark-graphite triplet + ⚖ glyph), rendered ALONGSIDE, not
   //       instead of, the door's existing identity icon (star / X).
-  // Both doors' status is safe to mark without spoiling the round: the
-  // host's opened door is already known to be a goat (that's what
-  // opening it means), and marking the reader's own door only states the
-  // general rule (the host can never open it), not whether it holds the
-  // prize. The remaining unopened door is deliberately left unmarked by
-  // either channel so nothing here discloses which door (if either) is
-  // the prize before the reader chooses. The badge's accessible text is
-  // copy.json's own rules.steps[5] verbatim — no new copy is introduced.
+  // Per DESIGN.md's third-attempt correction, the badge itself is applied
+  // ONLY to the reader's own picked door, never to the door the host
+  // opened: "structurally forbidden to open" is a fact about a pair
+  // evaluated *before* the host acts (the reader's own door and whichever
+  // door holds the car), and the host-opened door is neither of those --
+  // opening it is exactly what the host's rule permitted. The host-opened
+  // door still gets fact (a), the interaction-disabled class, plus its
+  // existing goat/X icons; it just never gets this badge. The remaining
+  // unopened door is left unmarked by either channel so nothing here
+  // discloses which door (if either) is the prize before the reader
+  // chooses. The badge's accessible name is carried by its own nested
+  // sr-only span (copy.json's own rules.steps[5] verbatim — no new copy
+  // is introduced), not a disconnected sibling, so the badge element has
+  // a real programmatic accessible name.
   function doorIneligibleBadgeHtml() {
     var ruleText = copy.rules.steps[5];
     return (
-      '<span class="door-ineligible-badge"><span class="icon icon-door-ineligible" aria-hidden="true"></span></span>' +
-      '<span class="sr-only">' + ruleText + "</span>"
+      '<span class="door-ineligible-badge"><span class="icon icon-door-ineligible" aria-hidden="true"></span><span class="sr-only">' + ruleText + "</span></span>"
     );
   }
 
@@ -317,7 +352,6 @@
     round3DoorEls[hostN].className = "door door-host-opened door-ineligible-interaction";
     round3DoorEls[hostN].innerHTML =
       '<span class="door-icons"><span class="icon icon-host-opened"></span><span class="icon icon-goat"></span></span>' +
-      doorIneligibleBadgeHtml() +
       '<span class="door-num">' + fillTemplate(c.doorLabel, { n: hostN }) + "</span>";
 
     // The remaining closed door gets its usual "this is the one left to

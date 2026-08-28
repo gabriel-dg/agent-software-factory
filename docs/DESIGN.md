@@ -33,60 +33,120 @@ color alone:
    it reads as a rare, notable event rather than a routine goat reveal.
 4. **Mark a door as structurally ineligible for the host's reveal — a real
    game-logic fact, not just a disabled button.** During Beat 2's reveal
-   moment, two things become true of the reader's picked door and the
-   door the host just opened, and both need to be visible: (a) the reader
-   can't click them right now (a UI interaction fact), and (b) the host's
-   rule could *never* have opened either of them — the reader's own pick
-   is off-limits by the game's setup, and the door the host *did* open is,
-   trivially, not a door the host could open a second time. That second
-   fact is part of the page's actual argument (why the host's reveal
-   carries information at all), so it needs its own visual carrier, not a
-   reuse of ordinary disabled-button chrome. An earlier build conflated
-   the two facts twice over: first by badging with the violet "key
-   mechanism" triplet and the not-yet-introduced lock glyph (wrong, for
-   the reasons below), then by dropping the badge and letting a flat
-   opacity/cursor treatment stand in for both facts (also wrong — that
-   only communicates "disabled," identically to every other disabled
-   control on the page, and a reader has no way to tell "this button
-   happens to be off" from "this door was categorically excluded by the
-   rule").
-   The fix keeps both facts, on two independent, non-competing visual
-   channels:
-   - **Fact (a), "not clickable right now,"** stays exactly what it was
-     before the badge existed: `--opacity-control-disabled` (0.5, matching
-     `.btn-primary:disabled`/`.btn-secondary:disabled` exactly) plus a
-     `not-allowed` cursor (`--cursor-disabled`), layered uniformly over
-     whichever base door triplet is already showing. No new hue, no new
-     icon — this remains generic, page-wide "disabled" styling and nothing
-     more.
-   - **Fact (b), "the host's rule forbade opening this door,"** gets its
-     own small badge with its own dedicated token triplet
-     (`--color-door-ineligible-badge-bg/border/text`) and its own glyph
-     (`--icon-door-ineligible-content`, ⚖ — a balance/scales, read as "this
-     was decided by the rule," not "off/disabled"). The badge is
-     deliberately painted in neither of the two colors it must never be
-     confused with: not violet (`--color-callout-key-*` / accent-primary),
-     which means "clickable" everywhere else on the page and would
-     directly contradict itself on a non-interactive door; and not the
-     `--icon-host-knowing-content` lock glyph or its teal triplet, which
-     is reserved for the host's *epistemic* certainty in Beat 3 and hadn't
-     even been introduced yet at this point in the page on first read.
-     Instead it uses a new, desaturated dark-graphite "ink stamp" family
-     (`#33363E` bg / `#9A96A6` border / `#F5F2EA` text) that appears
-     nowhere else on the page, chosen to read as a stamped, official
-     annotation — "ruled out by definition" — rather than as a
-     color-coded game state or a grayed-out control. It sits alongside,
-     not instead of, the doors' existing identity icons (the picked
-     door's ★ and the host-opened door's ✕), because it asserts a third,
-     independent fact, not a replacement for either of theirs. See the
+   moment, two independent facts become true of the reader's picked door:
+   (a) it isn't clickable right now (a UI interaction fact, true of the
+   host-opened door too), and (b) the host's rule could *never* have
+   opened it — it was off-limits by the game's setup before the host ever
+   acted. Fact (b) is part of the page's actual argument (why the host's
+   reveal carries information at all), so it needs its own visual
+   carrier, not a reuse of ordinary disabled-button chrome. Two earlier
+   attempts at this were wrong for three different reasons, all now
+   avoided:
+   - First attempt: badging with the violet "key mechanism" triplet and
+     the not-yet-introduced lock glyph — a color/icon collision with
+     meanings already claimed elsewhere on the page (see §2 below).
+   - Second attempt: dropping the badge and letting a flat opacity/cursor
+     treatment stand in for the game-logic fact too — indistinguishable
+     from every other disabled control on the page, losing the claim
+     entirely.
+   - Third attempt (caught in a post-build manual walkthrough, after the
+     badge and its own token triplet already existed): applying the
+     correctly-designed badge to *both* the reader's picked door and the
+     door the host actually opened. This is a different mistake from the
+     first two — not a color collision, not a degeneration into disabled
+     chrome, simply the wrong two doors. "Structurally forbidden to
+     open" is a fact about a pair evaluated *before* the host acts: the
+     reader's own door, and whichever door holds the car. The door the
+     host actually opened is neither of those — the host opening it is
+     exactly what his rule *permitted* (on 2 of 3 rounds, the only door
+     left; on 1 of 3, a free choice between two goats). Badging it as
+     "forbidden" asserts the opposite of what happened, and directly
+     contradicted the reveal copy sitting right below it
+     (`round3.hostKnowledgeReminder`: "He skipped Door {{pickedDoor}}
+     (yours) and the car's door"), which correctly names the picked door
+     and the car's door as the pair, never the host-opened door.
+
+   The design that avoids all three keeps fact (a) and fact (b) on two
+   independent, non-competing visual channels, and scopes fact (b)'s
+   badge correctly:
+   - **Fact (a), "not clickable right now,"** is exactly generic,
+     page-wide disabled-affordance styling: `--opacity-control-disabled`
+     (0.5, matching `.btn-primary:disabled`/`.btn-secondary:disabled`
+     exactly) plus a `not-allowed` cursor (`--cursor-disabled`), layered
+     uniformly over whichever base door triplet is already showing. No
+     new hue, no new icon. This applies to both the picked door and the
+     host-opened door — both are equally non-clickable right now, and
+     this fact alone doesn't distinguish why.
+   - **Fact (b), "the host's rule structurally forbade him from ever
+     opening this door,"** gets its own small badge with its own
+     dedicated token triplet (`--color-door-ineligible-badge-bg/border/
+     text`) and its own glyph (`--icon-door-ineligible-content`, ⚖ — a
+     balance/scales, read as "this was decided by the rule," not
+     "off/disabled"). The badge is deliberately painted in neither of the
+     two colors it must never be confused with: not violet
+     (`--color-callout-key-*` / accent-primary), which means "clickable"
+     everywhere else on the page and would directly contradict itself on
+     a non-interactive door; and not the `--icon-host-knowing-content`
+     lock glyph or its teal triplet, reserved for the host's *epistemic*
+     certainty in Beat 3. Instead it uses a new, desaturated dark-graphite
+     "ink stamp" family (`#33363E` bg / `#9A96A6` border / `#F5F2EA`
+     text) that appears nowhere else on the page, chosen to read as a
+     stamped, official annotation, "ruled out by definition," rather
+     than as a color-coded game state or a grayed-out control.
+     **Scope, corrected after the third attempt above:** the badge is
+     applied to *at most one door at a time*, the reader's own pick, and
+     never to the door the host actually opened. The two
+     structurally-forbidden doors, by definition, are the reader's pick
+     and the car's door, but the car's door can never be safely badged
+     before the stay/switch choice, and SPEC.md's revision-6 escalation
+     is explicit on this point: at reveal time the car's door is either
+     (i) the same door as the reader's own pick, in which case a
+     separate "car's door" badge on it would be redundant at best, or
+     (ii) the single remaining unopened door, in which case badging it
+     discloses outright that the car isn't behind the reader's own door
+     before the reader has chosen to stay or switch. There is no
+     rendering of "mark the car's door" that behaves identically in both
+     cases without leaking which one obtains, so it cannot be shown
+     pre-choice at all. The reader's own pick is the only member of the
+     pair that is always safely badgeable: it states just the general
+     rule ("the host could never open this door"), true and non-spoiling
+     regardless of whether the pick happens to be the car. SPEC.md's own
+     suggested non-spoiling phrasing ("mark both the reader's own door
+     and the host's opened door as 'ruled out by the rule'") is not
+     adopted verbatim here: "ruled out by the rule" loosely covers two
+     different facts (the pick was never eligible to be opened; the
+     opened door has been shown to be a goat) under one label, and this
+     system already has a correct, distinct, established carrier for the
+     second fact, the host-opened triplet plus its own ✕ + 🐐 icon pair,
+     which fully and correctly states "opened, shown to be a goat"
+     without any ineligibility claim, and needs no badge layered on top
+     of it. Reusing the ineligibility badge for the host-opened door
+     would restate an already-carried fact using a claim that isn't true
+     of that door. "As a pair" in SPEC.md's phrasing is read here as
+     naming the *definition* of structurally-forbidden (reader's door +
+     car's door), not a claim that both members are ever simultaneously
+     rendered before the choice resolves; in practice, at reveal time,
+     only one of the two ever is. It sits alongside, not instead of, the
+     picked door's own ★ icon, because it asserts a second, independent
+     fact about that same door, not a replacement for the first. See the
      ICONOGRAPHY and shape sections of `tokens.css` for the full triplet
      and glyph, and the Contrast pairs ledger below for its two verified
      pairs.
+   - **Accessible name.** The badge's ⚖ icon stays `aria-hidden="true"`;
+     it is not the sole carrier of the fact. Its text label (reused
+     verbatim from `copy.json`'s `rules.steps[5]`, no new copy) must be a
+     *child* of the badge's own element, immediately after the icon,
+     not a sibling that merely follows it in DOM order — a sibling has
+     no programmatic association with the badge and only happens to read
+     correctly when a screen reader linearizes the whole containing
+     button top to bottom. Nesting the label inside the badge makes it
+     unambiguously that element's own accessible content.
    This is a real eighth *marking*, but not an eighth door *state* in the
    sense of item 1: it never appears without one of the seven base door
    triplets underneath it, and it never substitutes for the bg/border/text
    pair that already identifies which of the seven states a door is in —
-   it only ever adds the one additional claim above on top.
+   it only ever adds the one additional claim above on top, and only to
+   the one door (the reader's pick) that claim is ever safe to render.
 5. **Never make Beat 3's played-vs-spoiled round grid color-only either.**
    The 500-cell grid visualizing Host B's rounds reuses
    `--color-host-random-bg/border` for an ordinary "played" cell (host
@@ -314,10 +374,30 @@ output.
   `--color-door-ineligible-badge-border` on that same background clears
   AA-UI (3:1) at 4.19:1. The separate, still-generic
   `--opacity-control-disabled` / `--cursor-disabled` pairing (the "not
-  clickable right now" fact, distinct from the badge's "ruled out by the
-  rule" fact) continues to need no ledger entry: it's a uniform opacity
-  multiplier applied on top of whichever door triplet already cleared AA
-  above, not an independently authored color.
+  clickable right now" fact, distinct from the badge's "structurally
+  forbidden to open" fact) continues to need no ledger entry: it's a
+  uniform opacity multiplier applied on top of whichever door triplet
+  already cleared AA above, not an independently authored color. As of
+  the post-build bug fix recorded in §1 item 4, this chip appears on at
+  most one door per round (the reader's own pick), never on the
+  host-opened door.
+- **Badge accessible name (post-build fix).** The badge's ⚖ icon
+  (`--icon-door-ineligible-content`) carries no accessible name of its
+  own and stays `aria-hidden="true"` — it is not the sole carrier of the
+  fact, unlike the round-grid ✓/💥 glyphs above, because a visually
+  hidden text label sits alongside it. That label must be a *child* of
+  the `.door-ineligible-badge` element (immediately after the icon, same
+  span), not merely a sibling that happens to follow it in the DOM: a
+  sibling has no programmatic association with the badge and only reads
+  correctly for a screen reader linearizing the whole button's content
+  top to bottom, not for any other means of inspecting the badge itself.
+  Nesting the label inside the badge span makes it unambiguously that
+  element's own accessible content, consistent with the
+  icon-decorative-plus-adjacent-visible-or-sr-only-label pattern already
+  used for the round-grid legend's swatches elsewhere on this page. The
+  label text itself is unchanged: `copy.json`'s `rules.steps[5]` verbatim,
+  no new copy introduced, reused because it states the exact rule the
+  badge visualizes ("he never opens your door or the car's door").
 - Focus states use a dedicated `--color-focus-ring` (3:1 against the page
   background, non-text UI contrast). `--shadow-focus` — the box-shadow
   actually applied to focusable elements — is built from
@@ -442,5 +522,16 @@ CONTRAST --color-door-ineligible-badge-border ON --color-door-ineligible-badge-b
   lock glyph (would collide with the host's epistemic certainty in Beat
   3), and not conveyed by opacity alone (would collide with ordinary
   disabled-button styling and lose the claim entirely). It renders
-  alongside, never instead of, the picked door's ★ and the host-opened
-  door's ✕.
+  alongside, never instead of, the picked door's ★. **Corrected scope
+  (post-build bug fix):** it is applied to at most one door at reveal
+  time, the reader's own pick, and it never renders on the host-opened
+  door. The two structurally-forbidden doors, by definition, are the
+  reader's pick and the car's door, but the car's door can never be
+  safely badged before the stay/switch choice (it either coincides with
+  the pick or is the single remaining door, and marking it either way
+  discloses the prize's location ahead of the choice) — see §1 item 4
+  above for the full reasoning. The host-opened door's ✕
+  icon over its own muted triplet already fully and correctly states its
+  status ("opened, shown to be a goat") without any ineligibility claim,
+  which the host-opened door never actually satisfied (opening it is
+  what the host's rule permitted, not what it forbade).

@@ -434,6 +434,12 @@
     padding-top: var(--space-sm);
     border-top: var(--border-width-hairline) solid var(--color-bg-inverse-alt);
   }
+  /* Colophon link: no new color token -- the anchor inherits the
+     surrounding --color-text-inverse-secondary ON --color-bg-inverse
+     pair (already verified in DESIGN.md's contrast ledger for this
+     exact spot). Underline is the only added affordance, so the link
+     reads as clickable without introducing an unverified color pair. */
+  .colophon a { color: inherit; text-decoration: underline; }
   .footer-card {
     background: var(--color-bg-inverse-alt);
     color: var(--color-text-inverse);

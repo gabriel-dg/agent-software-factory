@@ -128,23 +128,28 @@
   /* --------------------------------------------------------------------
      COLOR — Door ineligibility badge (Beat 2 reveal moment)
      Carries one specific game-logic claim, distinct from every other
-     door token: "the host's rule structurally forbade opening this
-     door" — not "you can't click this" (that's --opacity-control-disabled
-     / --cursor-disabled above, a separate UI-interaction fact layered
-     independently) and not "this is my pick" / "this is what got
-     opened" (that's --icon-picked-content / --icon-host-opened-content,
-     a separate identity fact). All three facts can be true of the same
-     door at the same time and are carried by three independent visual
-     channels so none of them is lost.
-     Deliberately its own achromatic "ink stamp" family — not violet
-     (that hue means "clickable" everywhere else on this page and must
-     never appear on a non-interactive door), not the teal/red-orange
-     host-mode hues, not amber, not the picked-door blue, and not the
-     muted olive-tan of the host-opened door state. A desaturated dark
-     graphite badge reads as a stamped annotation ("ruled out by
-     definition") rather than as a color-coded game state, echoing the
-     page's "proof" framing rather than its game-show framing. See
-     DESIGN.md §1 item 4.
+     door token: "the host's rule structurally forbade him from ever
+     opening this door" — not "you can't click this" (that's
+     --opacity-control-disabled / --cursor-disabled above, a separate
+     UI-interaction fact layered independently) and not "this is my
+     pick" (that's --icon-picked-content, a separate identity fact).
+     CORRECTED (see DESIGN.md §1 item 4, "Bug fix" subsection): this
+     badge is scoped to AT MOST ONE door at a time, the reader's own
+     picked door. It never appears on the door the host actually opened.
+     That door was never forbidden — the host opening it is exactly what
+     the rule permits (or forces); it is already fully and correctly
+     described by --icon-host-opened-content (✕) plus --icon-goat-content
+     over the muted --color-door-host-opened-* triplet, which is a
+     complete, accurate state on its own and needs no ineligibility
+     claim layered on top of it. Deliberately its own achromatic "ink
+     stamp" family — not violet (that hue means "clickable" everywhere
+     else on this page and must never appear on a non-interactive door),
+     not the teal/red-orange host-mode hues, not amber, not the
+     picked-door blue, and not the muted olive-tan of the host-opened
+     door state. A desaturated dark graphite badge reads as a stamped
+     annotation ("ruled out by definition") rather than as a color-coded
+     game state, echoing the page's "proof" framing rather than its
+     game-show framing. See DESIGN.md §1 item 4.
      -------------------------------------------------------------------- */
   --color-door-ineligible-badge-bg: #33363E;
   --color-door-ineligible-badge-border: #9A96A6;
@@ -244,16 +249,30 @@
   --icon-goat-content: "\1F410";         /* 🐐 */
   --icon-picked-content: "\2605";        /* ★ */
   --icon-host-opened-content: "\2715";   /* ✕ */
-  --icon-door-ineligible-content: "\2696"; /* ⚖ — Beat 2 badge only: "this
-                                             door was structurally forbidden
-                                             from being the host's reveal."
-                                             Scoped to exactly the two doors
-                                             this is true of (the reader's
-                                             pick and the host-opened door);
-                                             never reused for "not clickable"
-                                             (that stays non-visual/opacity)
-                                             and never reused for host-mode
-                                             certainty (that stays 🔒, see
+  --icon-door-ineligible-content: "\2696"; /* ⚖ — Beat 2 badge only: "the
+                                             host's rule structurally
+                                             forbade him from ever opening
+                                             this door." CORRECTED scope
+                                             (see DESIGN.md §1 item 4, "Bug
+                                             fix"): applied to at most ONE
+                                             door, the reader's own pick,
+                                             never to the door the host
+                                             actually opened (that door was
+                                             never forbidden; opening it is
+                                             what the rule permitted). The
+                                             other member of the true
+                                             structurally-forbidden pair,
+                                             the car's door, can never be
+                                             badged pre-choice without
+                                             disclosing the prize (it is
+                                             either the same door as the
+                                             pick, or the "remaining" door)
+                                             so it is deliberately left
+                                             unbadged. Never reused for
+                                             "not clickable" (that stays
+                                             non-visual/opacity) and never
+                                             reused for host-mode certainty
+                                             (that stays 🔒, see
                                              --icon-host-knowing-content) */
   --icon-remaining-content: "\25C6";     /* ◆ */
   --icon-host-knowing-content: "\1F512"; /* 🔒 */

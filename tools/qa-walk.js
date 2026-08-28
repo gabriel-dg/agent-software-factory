@@ -22,6 +22,12 @@
 //     car and the case where it's a goat, checking at reveal time (before
 //     the stay/switch choice) that neither the badge nor any prize/goat
 //     icon discloses which door (if either) holds the prize.
+//     Also verified, per a later mid-task course correction responding to
+//     a door-ineligibility badge fix: the badge is applied ONLY to the
+//     picked door (never the host-opened door), cross-checked against the
+//     door number round3.hostKnowledgeReminder's rendered text names as
+//     "(yours)," and its accessible name (nested sr-only child, not a
+//     disconnected sibling) resolves to copy.rules.steps[5] verbatim.
 //   - Beat 3's Host B batch run: verified to render a per-round
 //     spoiled-vs-played grid (not just a count), with genuinely distinct
 //     computed background colors between the two cell classes.
@@ -397,29 +403,73 @@ async function checkHoverPair(page, selector, label, rgbToTokens, allowedPairSet
 }
 
 // -----------------------------------------------------------------------
-// Beat 2 non-spoiling "never eligible" badge invariant (SPEC.md revision 6,
-// §3 Beat 2 design constraint / §4 item 7). At reveal time, before the
-// reader chooses stay/switch: the reader's own door and the host-opened
-// door must both carry the never-eligible badge; the remaining unopened
-// door must carry neither the badge nor any prize/goat icon; and the
-// reader's own door must show no prize/goat icon either. None of this may
-// depend on whether the reader's original pick turns out to be the car.
+// Beat 2 door-ineligibility badge invariant (SPEC.md revision 6, S3 Beat 2
+// design constraint / S4 item 7), updated for the badge fix that landed on
+// top of the last commit: the badge previously applied to BOTH the
+// reader's picked door AND the door the host actually opened, which was
+// semantically wrong (the host-opened door was never "structurally
+// forbidden" -- the host chose to open it, exactly what his rule
+// permitted) and directly contradicted the callout text below it
+// (round3.hostKnowledgeReminder), which names only "Door N (yours)" and
+// "the car's door" as the doors he skipped, never the door he opened. The
+// badge is now applied ONLY to the reader's own picked door.
+//
+// At reveal time, before the stay/switch choice, this checks:
+//   (a) non-spoiling: neither the reader's own door nor the remaining
+//       unopened door discloses a prize/goat icon before the choice.
+//   (b) badge distribution: the never-eligible badge appears on the
+//       picked door and ONLY the picked door -- never the host-opened
+//       door, never the remaining door. Verified across every round the
+//       Beat 2 loop plays (both the car-pick and goat-pick cases), not as
+//       a one-off.
+//   (c) copy cross-check: the door number the badge marks in the live DOM
+//       is the exact door number round3.hostKnowledgeReminder's rendered
+//       text names as "Door N (yours)" -- proving the badge and the copy
+//       agree on which door is "yours," not just that both independently
+//       look plausible.
+//   (d) accessible name (nesting fix under test): the badge's own
+//       accessible name -- via its nested, non-aria-hidden sr-only child,
+//       now INSIDE the badge span rather than a disconnected sibling --
+//       resolves to copy.json's rules.steps[5] verbatim, and the badge's
+//       aria-hidden icon glyph never duplicates that name.
 // -----------------------------------------------------------------------
-async function checkBeat2NoSpoilerInvariant(page, beatLabel) {
+async function checkBeat2BadgeInvariant(page, beatLabel) {
   const info = await page.evaluate(() => {
     function inspect(el) {
       if (!el) return null;
+      const badge = el.querySelector(".door-ineligible-badge");
+      const badgeIcon = badge ? badge.querySelector(".icon-door-ineligible") : null;
+      const doorNumEl = el.querySelector(".door-num");
       return {
-        hasBadge: !!el.querySelector(".door-ineligible-badge"),
-        hasIneligibleIcon: !!el.querySelector(".door-ineligible-badge .icon-door-ineligible"),
+        hasBadge: !!badge,
+        hasIneligibleIcon: !!badgeIcon,
         hasPrizeIcon: !!el.querySelector(".icon-prize"),
-        hasGoatIcon: !!el.querySelector(".icon-goat")
+        hasGoatIcon: !!el.querySelector(".icon-goat"),
+        badgeIconAriaHidden: badgeIcon ? badgeIcon.getAttribute("aria-hidden") : null,
+        // Accessible-name proxy: textContent of the badge element itself.
+        // The icon glyph is CSS ::before content (never part of
+        // textContent) and stays aria-hidden regardless, so this is
+        // exactly the nested sr-only child's text -- the badge's real
+        // accessible name after the nesting fix, not a disconnected
+        // sibling's.
+        badgeAccessibleText: badge ? badge.textContent.trim() : null,
+        doorNum: doorNumEl ? (doorNumEl.textContent.match(/\d+/) || [null])[0] : null
       };
     }
+    let expectedBadgeText = null;
+    try {
+      const parsedCopy = JSON.parse(document.getElementById("copy").textContent);
+      expectedBadgeText = parsedCopy.rules.steps[5];
+    } catch (e) {
+      expectedBadgeText = null;
+    }
+    const reminderEl = document.querySelector("#round3-after .callout-reminder");
     return {
       picked: inspect(document.querySelector("#round3-doors .door-picked")),
       hostOpened: inspect(document.querySelector("#round3-doors .door-host-opened")),
-      remaining: inspect(document.querySelector("#round3-doors .door-remaining"))
+      remaining: inspect(document.querySelector("#round3-doors .door-remaining")),
+      reminderText: reminderEl ? reminderEl.textContent : null,
+      expectedBadgeText: expectedBadgeText
     };
   });
 
@@ -433,23 +483,9 @@ async function checkBeat2NoSpoilerInvariant(page, beatLabel) {
     );
     return;
   }
-  if (!info.picked.hasBadge) {
-    fail(
-      beatLabel,
-      "#round3-doors .door-picked .door-ineligible-badge",
-      "reader's own door carries the never-eligible (ineligibility) badge at reveal time, before the stay/switch choice",
-      "badge missing on picked door",
-      await shot(page, `FAIL-${beatLabel}-picked-no-badge.png`)
-    );
-  } else if (!info.picked.hasIneligibleIcon) {
-    fail(
-      beatLabel,
-      "#round3-doors .door-picked .door-ineligible-badge .icon-door-ineligible",
-      "reader's own door's badge carries the dedicated \u2696 ineligibility glyph",
-      "badge present but ineligibility icon missing on picked door",
-      await shot(page, `FAIL-${beatLabel}-picked-badge-no-icon.png`)
-    );
-  }
+
+  // --- Non-spoiling invariant: neither the picked door nor the remaining
+  // unopened door may disclose prize/goat status before the choice. ---
   if (info.picked.hasPrizeIcon || info.picked.hasGoatIcon) {
     fail(
       beatLabel,
@@ -457,23 +493,6 @@ async function checkBeat2NoSpoilerInvariant(page, beatLabel) {
       "reader's own door shows no prize/goat icon before the stay/switch choice (non-spoiling)",
       JSON.stringify(info.picked),
       await shot(page, `FAIL-${beatLabel}-picked-spoiled.png`)
-    );
-  }
-  if (!info.hostOpened.hasBadge) {
-    fail(
-      beatLabel,
-      "#round3-doors .door-host-opened .door-ineligible-badge",
-      "host-opened door carries the never-eligible (ineligibility) badge at reveal time",
-      "badge missing on host-opened door",
-      await shot(page, `FAIL-${beatLabel}-host-no-badge.png`)
-    );
-  } else if (!info.hostOpened.hasIneligibleIcon) {
-    fail(
-      beatLabel,
-      "#round3-doors .door-host-opened .door-ineligible-badge .icon-door-ineligible",
-      "host-opened door's badge carries the dedicated \u2696 ineligibility glyph",
-      "badge present but ineligibility icon missing on host-opened door",
-      await shot(page, `FAIL-${beatLabel}-host-badge-no-icon.png`)
     );
   }
   if (info.remaining.hasBadge) {
@@ -493,6 +512,112 @@ async function checkBeat2NoSpoilerInvariant(page, beatLabel) {
       JSON.stringify(info.remaining),
       await shot(page, `FAIL-${beatLabel}-remaining-spoiled.png`)
     );
+  }
+
+  // --- Badge distribution (bug fix under test): picked door ONLY. ---
+  if (!info.picked.hasBadge) {
+    fail(
+      beatLabel,
+      "#round3-doors .door-picked .door-ineligible-badge",
+      "reader's own door carries the never-eligible (ineligibility) badge at reveal time, before the stay/switch choice",
+      "badge missing on picked door",
+      await shot(page, `FAIL-${beatLabel}-picked-no-badge.png`)
+    );
+  } else if (!info.picked.hasIneligibleIcon) {
+    fail(
+      beatLabel,
+      "#round3-doors .door-picked .door-ineligible-badge .icon-door-ineligible",
+      "reader's own door's badge carries the dedicated ⚖ ineligibility glyph",
+      "badge present but ineligibility icon missing on picked door",
+      await shot(page, `FAIL-${beatLabel}-picked-badge-no-icon.png`)
+    );
+  }
+  if (info.hostOpened.hasBadge) {
+    fail(
+      beatLabel,
+      "#round3-doors .door-host-opened .door-ineligible-badge",
+      'host-opened door must NOT carry the never-eligible badge (he was never "structurally forbidden" to open it -- opening it is exactly what his rule permitted; only the reader\'s own picked door is structurally forbidden ahead of time). Bug fix under test: badge previously applied to both picked and host-opened doors.',
+      "badge present on host-opened door",
+      await shot(page, `FAIL-${beatLabel}-host-opened-badge-should-be-absent.png`)
+    );
+  }
+  const badgeRoles = [];
+  if (info.picked.hasBadge) badgeRoles.push("picked");
+  if (info.hostOpened.hasBadge) badgeRoles.push("hostOpened");
+  if (info.remaining.hasBadge) badgeRoles.push("remaining");
+  if (badgeRoles.length !== 1 || badgeRoles[0] !== "picked") {
+    fail(
+      beatLabel,
+      "#round3-doors .door-ineligible-badge",
+      'exactly one door role carries the never-eligible badge: "picked", matching round3.hostKnowledgeReminder\'s "Door N (yours)" clause',
+      `badge present on role(s): [${badgeRoles.join(", ") || "none"}]`,
+      await shot(page, `FAIL-${beatLabel}-badge-role-mismatch.png`)
+    );
+  }
+
+  // --- Copy cross-check: the door number named as "(yours)" in the
+  // rendered hostKnowledgeReminder callout must be the same door number the
+  // badge actually marks in the live DOM. ---
+  if (!info.reminderText) {
+    fail(
+      beatLabel,
+      "#round3-after .callout-reminder",
+      "round3.hostKnowledgeReminder callout rendered in the DOM at reveal time",
+      "callout element not found",
+      await shot(page, `FAIL-${beatLabel}-reminder-missing.png`)
+    );
+  } else {
+    const m = info.reminderText.match(/skipped Door\s*(\d+)\s*\(yours\)\s*and the car's door/);
+    if (!m) {
+      fail(
+        beatLabel,
+        "#round3-after .callout-reminder",
+        'hostKnowledgeReminder text names the skipped doors as "Door N (yours) and the car\'s door" (copy.json round3.hostKnowledgeReminder verbatim structure)',
+        info.reminderText.slice(0, 300),
+        await shot(page, `FAIL-${beatLabel}-reminder-format.png`)
+      );
+    } else if (info.picked.doorNum !== m[1]) {
+      fail(
+        beatLabel,
+        "#round3-doors .door-picked vs #round3-after .callout-reminder",
+        `badge-marked picked door (Door ${info.picked.doorNum}) matches the door hostKnowledgeReminder names as "(yours)" (Door ${m[1]})`,
+        `DOM badge is on Door ${info.picked.doorNum}, but the reminder copy names Door ${m[1]} as "yours"`,
+        await shot(page, `FAIL-${beatLabel}-badge-copy-door-mismatch.png`)
+      );
+    }
+  }
+
+  // --- Accessible name (nesting fix under test): the badge's own
+  // accessible name, via its nested (non-aria-hidden) sr-only child, must
+  // resolve to copy.json's rules.steps[5] verbatim, and the icon glyph
+  // stays aria-hidden so it doesn't duplicate/interfere with that name. ---
+  if (info.expectedBadgeText === null) {
+    fail(
+      beatLabel,
+      "#copy",
+      "copy.rules.steps[5] readable from the embedded #copy JSON to check the badge's expected accessible name",
+      "could not parse #copy JSON",
+      await shot(page, `FAIL-${beatLabel}-badge-name-copy-unreadable.png`)
+    );
+  } else if (info.picked.hasBadge) {
+    if (info.picked.badgeAccessibleText !== info.expectedBadgeText) {
+      fail(
+        beatLabel,
+        "#round3-doors .door-picked .door-ineligible-badge",
+        `badge's accessible name (nested sr-only child's text content) equals copy.rules.steps[5] verbatim: "${info.expectedBadgeText}"`,
+        `actual: "${info.picked.badgeAccessibleText}"`,
+        await shot(page, `FAIL-${beatLabel}-badge-accessible-name-mismatch.png`)
+      );
+    }
+    if (info.picked.badgeIconAriaHidden !== "true") {
+      fail(
+        beatLabel,
+        "#round3-doors .door-picked .door-ineligible-badge .icon-door-ineligible",
+        'badge icon glyph stays aria-hidden="true" so it never duplicates the badge\'s nested sr-only accessible name',
+        `aria-hidden="${info.picked.badgeIconAriaHidden}"`,
+        await shot(page, `FAIL-${beatLabel}-badge-icon-not-aria-hidden.png`)
+      );
+    }
   }
 }
 
@@ -735,7 +860,7 @@ async function main() {
       // Non-spoiling never-eligible badge invariant: must hold at reveal
       // time, before the stay/switch choice, regardless of which case
       // (car-pick or goat-pick) this particular round turns out to be.
-      await checkBeat2NoSpoilerInvariant(page, beatLabel);
+      await checkBeat2BadgeInvariant(page, beatLabel);
 
       // Choose switch, then reveal, to learn (after the fact, for our own
       // bookkeeping only) whether this round was a car-pick or goat-pick.
