@@ -63,6 +63,7 @@ function extractClaims(obj, keyPath = []) {
         claims.push({
           key: formatKey([...keyPath, baseKey]),
           assertValue: assertValue,
+          isArrayAssert: Array.isArray(assertValue), // Track if this is an array of parallel assertions
         });
       } else {
         const subClaims = extractClaims(obj[key], [...keyPath, key]);
@@ -309,6 +310,162 @@ function computeEmpirical(assertion) {
   return empirical;
 }
 
+// Detect if a string states a probability or percentage.
+// Detection rule (stated explicitly so the number is reproducible):
+// A string is considered to state a probability if it contains:
+// - A fraction pattern like 1/3, 2/3, 99/100, etc. (digits/digits)
+// - An "N in N" phrase (e.g., "1 in 3", "2 of 3", "99 in 100")
+// - A percentage (e.g., "33%", "2%", "99%")
+// This rule is designed to catch the major probability claims while avoiding
+// false positives on plain numeric values that don't express a probability.
+function stringStatesProbability(str) {
+  // Pattern 1: Fraction (digits/digits), e.g., "1/3", "2/3", "99/100"
+  if (/\d+\/\d+/.test(str)) {
+    return true;
+  }
+
+  // Pattern 2: "N in N" or "N of N", e.g., "1 in 3", "2 of 3", "3 out of 100"
+  if (/\d+\s+(in|of)\s+\d+/.test(str)) {
+    return true;
+  }
+
+  // Pattern 3: Percentage, e.g., "33%", "2%", "99%"
+  if (/\d+%/.test(str)) {
+    return true;
+  }
+
+  return false;
+}
+
+// Check coverage gap: find strings stating a probability that have no assertion
+// This version properly handles array-parallel assertions where the assertion
+// for an array element lives at the matching index in a parallel _assert array.
+function findCoverageGap(obj, allClaims, keyPath = []) {
+  const gapItems = [];
+
+  if (obj === null || obj === undefined) {
+    return gapItems;
+  }
+
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      const item = obj[i];
+      if (item === null || item === undefined) {
+        continue;
+      }
+      const subGap = findCoverageGap(item, allClaims, [...keyPath, `[${i}]`]);
+      gapItems.push(...subGap);
+    }
+    return gapItems;
+  }
+
+  if (typeof obj === 'string') {
+    // Check if this string states a probability
+    if (stringStatesProbability(obj)) {
+      // Build the full key path for this string
+      const fullKey = formatKey(keyPath);
+
+      // Check if there's an assertion for this key
+      let hasAssertion = false;
+      let isArrayElement = false;
+
+      // First, check for direct claim match
+      for (const claim of allClaims) {
+        if (claim.key === fullKey) {
+          hasAssertion = true;
+          break;
+        }
+      }
+
+      // If not found and this is an array element, check the parent array's assertions
+      if (!hasAssertion) {
+        // Check if this is an array element (keyPath ends with [index])
+        const lastPathItem = keyPath[keyPath.length - 1];
+        if (typeof lastPathItem === 'string' && lastPathItem.startsWith('[') && lastPathItem.endsWith(']')) {
+          isArrayElement = true;
+
+          // Extract the index
+          const indexStr = lastPathItem.slice(1, -1);
+          const index = parseInt(indexStr, 10);
+
+          // Build the parent key path (without the index)
+          const parentKeyPath = keyPath.slice(0, -1);
+          const parentKey = formatKey(parentKeyPath);
+
+          // Look for a claim with the parent key and array assertion
+          for (const claim of allClaims) {
+            if (claim.key === parentKey && claim.isArrayAssert) {
+              // Found the parent claim with array assertions
+              // Check if the assertValue has a non-null at this index
+              if (Array.isArray(claim.assertValue) && claim.assertValue[index] !== null && claim.assertValue[index] !== undefined) {
+                hasAssertion = true;
+              }
+              break;
+            }
+          }
+        }
+      }
+
+      if (!hasAssertion) {
+        gapItems.push({
+          key: fullKey,
+          value: obj,
+          isArrayElement: isArrayElement
+        });
+      }
+    }
+    return gapItems;
+  }
+
+  if (typeof obj === 'object') {
+    const keys = Object.keys(obj);
+    for (const key of keys) {
+      // Skip _assert objects themselves
+      if (key.endsWith('_assert')) {
+        continue;
+      }
+      const subGap = findCoverageGap(obj[key], allClaims, [...keyPath, key]);
+      gapItems.push(...subGap);
+    }
+  }
+
+  return gapItems;
+}
+
+// Count all strings that state a probability
+function countProbabilityStrings(obj) {
+  let count = 0;
+
+  if (obj === null || obj === undefined) {
+    return count;
+  }
+
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      count += countProbabilityStrings(item);
+    }
+    return count;
+  }
+
+  if (typeof obj === 'string') {
+    if (stringStatesProbability(obj)) {
+      count = 1;
+    }
+    return count;
+  }
+
+  if (typeof obj === 'object') {
+    const keys = Object.keys(obj);
+    for (const key of keys) {
+      if (!key.endsWith('_assert')) {
+        count += countProbabilityStrings(obj[key]);
+      }
+    }
+  }
+
+  return count;
+}
+
 // Main execution
 
 // First, perform style checks on all string values
@@ -325,6 +482,8 @@ for (const stringItem of stringValues) {
 
 // Then, perform numeric claim checks
 const claims = extractClaims(copyJson);
+let assertionCount = 0;
+const keysWithAssertions = new Set();
 
 for (const claim of claims) {
   const validation = validateAssertion(claim.assertValue);
@@ -336,6 +495,9 @@ for (const claim of claims) {
   }
 
   const assertions = validation.valid;
+  keysWithAssertions.add(claim.key);
+  assertionCount += assertions.length;
+
   for (const assertion of assertions) {
     try {
       const empirical = computeEmpirical(assertion);
@@ -356,6 +518,11 @@ for (const claim of claims) {
   }
 }
 
+// Find coverage gap
+const gap = findCoverageGap(copyJson, claims);
+const totalProbabilityStrings = countProbabilityStrings(copyJson);
+const annotatedCount = totalProbabilityStrings - gap.length;
+
 // Output results
 console.log('STYLE PASS RESULTS:');
 if (styleFailures.length === 0) {
@@ -367,6 +534,26 @@ if (styleFailures.length === 0) {
 console.log('\nNUMERIC CLAIM RESULTS:');
 console.log(results.join('\n'));
 
+// Coverage gap report
+console.log('\nCOVERAGE GAP RESULTS:');
+console.log(`Total strings stating probability: ${totalProbabilityStrings}`);
+console.log(`Strings with assertions: ${annotatedCount}`);
+console.log(`Strings without assertions: ${gap.length}`);
+if (gap.length > 0) {
+  console.log('Key paths (array elements noted):');
+  for (const item of gap) {
+    const typeLabel = item.isArrayElement ? ' [ARRAY ELEMENT]' : ' [plain key]';
+    console.log(`  ${item.key}${typeLabel}`);
+  }
+}
+
 // Final summary
+console.log('\n--- SUMMARY ---');
+console.log(`Assertions evaluated: ${assertionCount}`);
+console.log(`Keys with assertions: ${keysWithAssertions.size}`);
+console.log(`Total probability strings: ${totalProbabilityStrings}`);
+console.log(`Annotated (with assertion): ${annotatedCount}`);
+console.log(`Coverage gap (without assertion): ${gap.length}`);
+
 console.log('\n' + (failCount === 0 ? 'PASS' : 'FAIL'));
 process.exit(failCount === 0 ? 0 : 1);

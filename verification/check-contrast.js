@@ -134,6 +134,8 @@ function verify() {
 
   let hasFailed = false;
   const results = [];
+  const skipped = [];
+  let checkedCount = 0;
 
   for (const pair of pairs) {
     // Check for format errors
@@ -142,6 +144,10 @@ function verify() {
         type: 'FORMAT_ERROR',
         line: pair.line,
         message: pair.message
+      });
+      skipped.push({
+        line: pair.line,
+        reason: 'FORMAT_ERROR'
       });
       hasFailed = true;
       continue;
@@ -154,6 +160,10 @@ function verify() {
         line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
         message: `Token not found: ${pair.fgToken}`
       });
+      skipped.push({
+        line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
+        reason: 'Token not found: ' + pair.fgToken
+      });
       hasFailed = true;
       continue;
     }
@@ -163,6 +173,10 @@ function verify() {
         type: 'FORMAT_ERROR',
         line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
         message: `Token not found: ${pair.bgToken}`
+      });
+      skipped.push({
+        line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
+        reason: 'Token not found: ' + pair.bgToken
       });
       hasFailed = true;
       continue;
@@ -178,6 +192,10 @@ function verify() {
         line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
         message: `Token is not a literal color: ${pair.fgToken} = ${fgValue}`
       });
+      skipped.push({
+        line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
+        reason: 'Token is not a literal color: ' + pair.fgToken
+      });
       hasFailed = true;
       continue;
     }
@@ -187,6 +205,10 @@ function verify() {
         type: 'FORMAT_ERROR',
         line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
         message: `Token is not a literal color: ${pair.bgToken} = ${bgValue}`
+      });
+      skipped.push({
+        line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
+        reason: 'Token is not a literal color: ' + pair.bgToken
       });
       hasFailed = true;
       continue;
@@ -219,6 +241,8 @@ function verify() {
         diff: ratioDiff.toFixed(2)
       });
 
+      checkedCount++;
+
       if (!meetsThreshold || !ratioMatch) {
         hasFailed = true;
       }
@@ -227,6 +251,10 @@ function verify() {
         type: 'ERROR',
         pair: `${pair.fgToken} ON ${pair.bgToken}`,
         message: e.message
+      });
+      skipped.push({
+        line: `CONTRAST ${pair.fgToken} ON ${pair.bgToken} = ${pair.claimedRatio} ${pair.level}`,
+        reason: 'Computation error: ' + e.message
       });
       hasFailed = true;
     }
@@ -245,6 +273,18 @@ function verify() {
       console.log(`${result.pair}, ${result.computed}, ${result.claimed}, ${result.threshold}`);
     } else {
       console.log(`${result.type}: ${result.message || result.line}`);
+    }
+  }
+
+  // Summary section
+  console.log('\n--- SUMMARY ---');
+  console.log(`Contrast pairs parsed: ${pairs.length}`);
+  console.log(`Contrast pairs checked: ${checkedCount}`);
+  console.log(`Contrast pairs skipped: ${skipped.length}`);
+  if (skipped.length > 0) {
+    console.log('Skipped pairs:');
+    for (const skip of skipped) {
+      console.log(`  ${skip.line} | ${skip.reason}`);
     }
   }
 
