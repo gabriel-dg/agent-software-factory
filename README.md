@@ -4,8 +4,10 @@
 with separate roles, exclusive file ownership, and independent verification,
 end to end to find out how a multi-agent build actually behaves in
 practice, using a Monty Hall explainer as the test case. First full run:
-$31.81 API-equivalent, 49% of it spent on the orchestrator's own
-coordination, not on any agent's actual work. That bought nine real bugs the
+$31.81 API-equivalent, with only 51% of that usage attributed to named
+subagents and the other 49% not attributed to anything. Coordination
+overhead in the orchestrator's own context is the likeliest explanation,
+but the reported numbers do not establish it. That bought nine real bugs the
 pipeline caught, three of which no single-session build would have
 surfaced. A human walkthrough of the finished page afterwards found four
 more defects that all four verification layers had passed. To look
@@ -30,10 +32,12 @@ that is not a marginal overhead, it is the headline result.
 
 This repository contains the pipeline definition, [`CLAUDE.md`](CLAUDE.md)
 and the eight agent definitions in [`.claude/agents/`](.claude/agents/), and
-the Monty Hall explainer it produced. Every claim the page makes about the
-odds is checked by code against a real simulation, and every color pair it
-renders is checked against a computed WCAG contrast ratio, not just
-asserted in prose.
+the Monty Hall explainer it produced. Where a claim about the odds carries
+a machine-readable assertion, that assertion is checked by code against a
+real simulation, and every color pair the page renders is checked against a
+computed WCAG contrast ratio rather than asserted in prose. The assertions
+themselves are the part a human still has to get right: the checker compares
+the simulation to the assertion, never to the sentence the reader sees.
 
 To run it: visit the [live demo](https://gabriel-dg.github.io/agent-software-factory/), or clone the repo and open `index.html` in a browser. No build step, no server, no npm install required for the page itself.
 
@@ -265,18 +269,41 @@ required threshold and the ratio `DESIGN.md` claims. This catches a color
 pair that was eyeballed as "looks fine" but fails AA, or a documented ratio
 that's gone stale after a token value changed.
 
-**3. Every numeric claim in the copy against the simulation.**
+**3. Declared assertions in the copy against the simulation.**
 ```
 node verification/check-claims.js
 ```
-Every string in `copy.json` that states a number carries a sibling
-`_assert` key declaring exactly what claim it's making. This script runs
-the simulation with a fixed seed and checks the claim against the actual
-output, and (since a later revision) also runs a mechanical style pass over
-every string for em dashes, en dashes standing in for em dashes, and
-malformed or unrecognized `{{placeholder}}` tokens. This catches a copy edit
-that quietly drifts a stated number away from what the simulation actually
-produces, and catches prose defects no one proofread for.
+A string in `copy.json` that states a number may carry a sibling `_assert`
+object naming `doorCount`, `hostMode`, `metric`, `expected` and
+`tolerance`. This script runs the simulation with a fixed seed and checks
+that the simulation's output for that metric lands within `tolerance` of
+`expected`. It also runs a mechanical style pass over every string for em
+dashes, en dashes standing in for em dashes, and malformed or unrecognized
+`{{placeholder}}` tokens.
+
+Be precise about what that does and does not establish, because it is easy
+to read as more than it is. The script never parses the number written in
+the sentence. It compares the simulation to the assertion, and the only
+thing connecting the assertion to the sentence beside it is the intent of
+whoever wrote both. A sentence can be edited into saying something else
+entirely and the check still passes, as long as the `_assert` object is
+untouched. The relationship is not even always equality:
+`round100.mechanismCallout` tells the reader blind luck pulls this off
+"only about 1 time in 50, roughly 2%" and its assertion is `prizeRevealed`
+with `expected` 0.98, the complement. Both are correct, and a human has to
+know that to know they are.
+
+Coverage is partial, and nothing reports the gap. Counting strings that
+contain a fraction, an "N in N" or "N of N" phrase, or a percentage, 36
+strings in `copy.json` state a probability and 19 of them carry an
+assertion. The 17 that do not include all six route rows and both worked
+divisions in the two `whyYourDoorDoesntMove` tables, which is to say every
+joint probability and the entire renormalization, the most mathematically
+load-bearing arithmetic on the page. None of it is checked by anything but
+a human reading it. So this layer catches a stated `expected` drifting away
+from what the simulation produces; it does not catch a wrong number in the
+copy, and it cannot tell anyone that a claim was never annotated in the
+first place.
 
 **4. Real-browser behavior via Playwright.**
 ```
@@ -437,15 +464,20 @@ By model:
 
 Share of total usage by subagent, as reported by Claude Code: learning-designer
 16%, qa-walker 15%, ui-engineer 9%, art-director 6%, skeptic 3%,
-design-reviewer 1%, math-verifier 1%. That's 51%. The remaining 49% was
-consumed by the orchestrator's own context in the main thread, coordination
-cost as much as all eight specialist agents combined, even though the
-entire point of delegating to subagents is to keep work out of that main
-context. 42% of total usage happened at over 150k tokens of context, which
-is what drives that orchestrator share: a long-running coordinator
-accumulates context from every delegation, every routing decision, and
-every status check, and none of that is free just because it isn't a
-subagent call.
+design-reviewer 1%, math-verifier 1%. Those are seven figures for eight
+agents: sim-engineer does not appear in the list at all. They were reported
+as individual characteristics of usage, not as a partition of it, so they
+carry no guarantee of summing to 100%. They sum to 51%.
+
+What consumed the other 49% is not something these numbers answer. The
+hypothesis they are consistent with is that the orchestrator's own context
+accounts for much of it: 42% of total usage happened at over 150k tokens of
+context, and a long-running coordinator accumulates context from every
+delegation, every routing decision, and every status check, none of which
+is free just because it isn't a subagent call. But sim-engineer's missing
+share sits in that same 49%, and nothing in the source data splits it. Read
+coordination overhead here as a hypothesis the numbers permit, not as a
+measurement.
 
 The honest comparison: a single well-prompted Claude Code session would
 have built a page like this for a small fraction of that cost. What the
@@ -476,11 +508,13 @@ The design rules that mattered most, independent of this specific project:
   parallelism safe without a merge step: art-director and sim-engineer can
   run at the same time because neither can touch the other's files, and the
   same is true of skeptic and design-reviewer.
-- **Every claim that can be made checkable, is.** A number in the copy
-  carries a machine-readable assertion next to it. A color pair carries a
-  claimed ratio next to it in a fixed, parseable grammar. Neither of those
-  need to exist for a page to work, they exist so a script can independently
-  confirm them instead of trusting the agent that wrote them.
+- **A claim carries its own machine-readable assertion.** A number in the
+  copy can carry an assertion object next to it. A color pair carries a
+  claimed ratio next to it in a fixed, parseable grammar. Neither needs to
+  exist for a page to work, they exist so a script can independently confirm
+  them instead of trusting the agent that wrote them. The limit, which cost
+  this project real coverage, is that a script can only check the claims
+  someone remembered to annotate, and nothing flags the ones nobody did.
 - **No state may be distinguished by color alone.** Every meaningfully
   different visual state on the page (a prize door versus a goat door, a
   knowing host versus a random one, a forced case versus a free one) has to
@@ -517,8 +551,8 @@ applying cleanly.
 
 It depends on claims being independently checkable by code at all. "Is this
 contrast ratio real," "does this simulation match the closed-form answer,"
-and "does this stated number match the simulation" are yes-or-no questions
-a script can answer. Whether an API design is good, or an abstraction is the
+and "does this declared assertion match the simulation" are yes-or-no
+questions a script can answer. Whether an API design is good, or an abstraction is the
 right one, generally isn't that kind of question, and no role in this
 pipeline would have caught a problem of that kind.
 
