@@ -5,8 +5,10 @@ with separate roles, exclusive file ownership, and independent verification,
 end to end to find out how a multi-agent build actually behaves in
 practice, using a Monty Hall explainer as the test case. First full run:
 $31.81 API-equivalent, 49% of it spent on the orchestrator's own
-coordination, not on any agent's actual work. That bought nine real bugs,
-three of which no single-session build would have surfaced. To look
+coordination, not on any agent's actual work. That bought nine real bugs the
+pipeline caught, three of which no single-session build would have
+surfaced. A human walkthrough of the finished page afterwards found four
+more defects that all four verification layers had passed. To look
 further: open `index.html` for the page, read `CLAUDE.md` and
 `.claude/agents/` for the pipeline, read `docs/LESSONS.md` for the
 generalized rules.
@@ -370,6 +372,42 @@ this domain on purpose.
   described in the verification section above exists now, specifically
   because the pipeline had a real gap here and closing it meant adding a
   fourth kind of check, not just re-trusting the same self-report.
+
+## What the pipeline missed
+
+The pipeline reported all four verification layers green: the simulation
+check, the contrast check, the claim check, and qa-walker's browser walk. A
+human then opened the built page and walked it as a reader would, and found
+four more defects. Three of them had qa-walker's PASS on them at the time.
+
+- **The footer was never gated.** Every teaching beat on the page is hidden
+  until the reader unlocks it, but the footer had no gating of its own, so it
+  collapsed upward and rendered directly under the first poll. The reader saw
+  the host-knowledge rule and the colophon before answering the opening
+  question. The root cause is that the footer was never in `SPEC.md`, so
+  qa-walker's "nothing visible before its trigger" check had no entry for it.
+- **The door ineligibility badge marked the wrong doors.** Its class was
+  `door-ineligible-interaction` and it was applied to the player's picked door
+  and to the door the host had opened, meaning "not clickable", not "the host
+  was structurally forbidden from opening this". It was never applied to the
+  car's door. It therefore contradicted the callout rendered directly below
+  it, which read that the host skipped the player's door and the car's door.
+  qa-walker passed it because its assertion checked that the badge did not
+  spoil the round, not that it marked the doors the copy claimed.
+- **The badge was invisible to assistive technology.** It contained no text,
+  no `title` and no `aria-label`, and its only icon was `aria-hidden`. An
+  explicit instruction that any icon carrying meaning must not be
+  `aria-hidden` had been given, and was not caught by any check.
+- **The colophon's repository URL was plain text.** The footer contained no
+  anchor element at all, so the one link the page existed to offer could not
+  be clicked.
+
+Every one of these is the same failure shape as the bugs the pipeline did
+catch: a verifier checking correctly against a specification that does not
+mention the thing being checked. The pipeline never validates that its own
+specification is complete, and no layer in it can. The count in the list
+above is therefore the count of defects the pipeline found, not the count of
+defects that existed.
 
 ## What it cost
 
