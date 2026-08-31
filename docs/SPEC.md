@@ -1,6 +1,6 @@
 # SPEC.md — Monty Hall Interactive Explainer
 ### Pedagogical specification (learning-designer)
-### Revision 6 — accuracy and consistency fixes (fourth skeptic pass)
+### Revision 7: arithmetic and overclaim fixes (external review)
 
 This document defines the sequence of beats a reader moves through, what each
 beat must accomplish psychologically/pedagogically, and what interaction each
@@ -242,6 +242,59 @@ correction to Beat 3's stated rationale for the spoiled/played visual
 distinction (the actual spoil rate matches the 1/3 baseline exactly; it does
 not exceed it, and the copy, not the visual, now carries the survivorship
 claim about *which* rounds get spoiled).
+
+**Revision 7 (this one)** is a scoped fix for three findings from an external
+review of the built page, all independently hand-verified before being routed
+here. No beat was added, removed, or reordered, and no `_assert` value,
+`expected`, or `tolerance` was changed. In brief:
+
+1. **Revision 6's Route 3 partition was wrong, not just differently framed.**
+   `whyYourDoorDoesntMove.knowingHost.routes[2]` had stated Route 3 as "you had
+   the goat behind the door that actually got opened" and reasoned about the
+   *player's own door*, which is not a member of the partition at all (the
+   partition, fixed across all three routes, is "where is the car," not
+   "where did the player pick"). Route 3 is now stated correctly on the car's
+   location: prior 1/3, the car was behind the door that got opened, joint
+   probability 0 because the knowing host is forbidden from opening the car's
+   door. This now matches the random-host table's Route 3 row for row, as it
+   always should have. `randomHost.routes[2].detail` is rewritten to match: it
+   no longer claims it "isn't the mirror" of the knowing host's Route 3, since
+   after the fix it is; what's still correctly kept distinct is *why* each
+   zeroes out (the knowing host's rule forbids it; the random host's is ruled
+   out by what the reader observed, a goat rather than the car). `comparisonTakeaway`
+   no longer tells the reader "Route 3 answers a different question... don't
+   expect it to line up" (removed entirely, since it's now false); it states
+   the tables line up row for row and keeps the takeaway's real payload: the
+   knowing host's Route 2 has no coin flip so it's worth twice Route 1 (2/6 vs
+   1/6), the random host's Route 2 gets the same coin as Route 1 so they're
+   equal (1/6 and 1/6). **Revision 6's log item 3 below, which recorded the
+   wrong partition as a deliberate design decision, is superseded and has been
+   annotated in place rather than silently rewritten; see the correction note
+   attached to it.**
+2. **A multiplication was misstated as its answer in different units.**
+   `knowingHost.routes[1].detail` said "Joint probability: 1/3 x 1 = 2 in 6,"
+   but 1/3 x 1 is 1/3, not "2 in 6"; the sixths figure is 1/3 rewritten on a
+   common denominator, not the product itself, and the old phrasing collapsed
+   the two steps into one false-looking equation. Fixed by stating the product
+   honestly (1/3 x 1 = 1/3) and then, as a separate sentence, converting it to
+   2/6 for comparison with the other rows. Every other route detail in both
+   tables was checked for the same defect; none had it (Route 1's "1/3 x 1/2 =
+   1 in 6" is a genuine multiplication and needed no change).
+3. **Beat 1 stated the 2/3 win rate as settled fact before any beat had earned
+   it.** `rules.mechanismCallout.text` claimed the host's forced choice "is the
+   entire reason switching wins 2 of 3 times." Beat 1 is a static read: the
+   reader has not yet played (Beat 2), seen the three-case enumeration (Beat
+   3), or watched an aggregate (Beat 4). §5 already forbade exactly this
+   ("no beat should ask the reader to accept the 2/3 figure on authority alone
+   without either playing it, watching it converge, seeing the mechanism
+   contrast, or working through the enumeration"), and separately forbade
+   Beat 2 from stating the fraction, which made stating it a beat earlier
+   worse, not better. Resolved by removing the win-rate number from Beat 1:
+   the callout's real job, making the host-knowledge rule unmissable, does not
+   need the number to do that job, and §5's existing rule is left standing
+   as written rather than carved out an exception for this copy. The callout
+   now says the forced choice "is why switching has the edge over staying,"
+   with the exact figure deferred to where it's actually proven.
 
 ---
 
@@ -1010,6 +1063,65 @@ footer                  — closing credits/disclaimer, not a teaching beat
 
 ## 7. Revision log
 
+### Revision 7 (this round): external review, three findings, all independently hand-verified
+
+See the summary near the top of this document for the full rationale; this
+entry is the itemized changelog pointer. All three findings were in
+`copy.json`; the corresponding `docs/SPEC.md` change for finding 1 is the
+correction note attached to revision 6's log item 3, below. No beat was
+added, removed, or reordered; no `_assert` value, `expected`, or `tolerance`
+was changed.
+
+1. **Wrong partition in `whyYourDoorDoesntMove.knowingHost.routes[2]`.** With
+   the player's pick held fixed, the three routes in each table must
+   partition on the car's location, since that's what Routes 1 and 2 already
+   do (Route 1: car behind your door; Route 2: car behind the other closed
+   door). Route 3 had instead been stated as "you had the goat behind the
+   door that actually got opened," a claim about which door the player
+   picked, not about the car's location, so it wasn't a member of the
+   partition at all. The zero was right; the reasoning for it was not.
+   Fixed: Route 3 is now "the car was behind the door that got opened," prior
+   1/3, joint probability 0 because the knowing host is forbidden from
+   opening the car's door. This now matches the random host's Route 3 row for
+   row. Consequences handled in the same pass:
+   - `randomHost.routes[2].detail` no longer opens by insisting it "isn't the
+     mirror" of the knowing host's Route 3; after the fix, it is. Rewritten to
+     state the shared partition and keep the one real difference: *why* each
+     zeroes out (the knowing host's rule forbids it; the random host's is
+     ruled out by what the reader observed).
+   - `comparisonTakeaway` no longer tells the reader "Route 3 answers a
+     different question in each table, so don't expect it to line up"
+     (deleted, since the tables now line up row for row). The takeaway's real
+     payload is unchanged and restated: the knowing host's Route 2 has no
+     coin flip so it's worth twice Route 1 (2/6 vs 1/6); the random host's
+     Route 2 gets the same coin as Route 1 so they're equal (1/6 and 1/6).
+   - Revision 6's log item 3 (§7 below) recorded the wrong partition as a
+     deliberate decision. It is now annotated in place with a correction
+     note rather than silently rewritten, so the error and its fix are both
+     traceable.
+   - §2a and §2b were checked for the same wrong partition; neither states
+     it (§2b's "exactly two routes" derivation only ever discussed Routes 1
+     and 2 and never characterized Route 3, so it required no change).
+2. **Non-multiplication in `knowingHost.routes[1].detail`.** "Joint
+   probability: 1/3 x 1 = 2 in 6" is not what that multiplication produces;
+   1/3 x 1 is 1/3, and "2 in 6" silently rewrites the result in sixths without
+   saying so. Fixed by stating the product honestly (1/3 x 1 = 1/3) and then,
+   as a separate, explicit sentence, converting it to 2/6 so it can be
+   compared with the other rows on a common denominator. Every other route
+   detail in both tables was checked for the same defect: none had it (Route
+   1's "1/3 x 1/2 = 1 in 6" is a genuine multiplication and was left as is).
+3. **Beat 1 asserted the 2/3 figure before any beat had earned it.**
+   `rules.mechanismCallout.text` said the host's forced choice "is the entire
+   reason switching wins 2 of 3 times." Beat 1 is a static read, before the
+   reader has played (Beat 2), seen the three-case enumeration (Beat 3), or
+   watched an aggregate (Beat 4); §5 already forbids exactly this, and
+   separately forbids Beat 2 from stating the fraction, which made stating it
+   in Beat 1 worse, not better. Resolved by removing the win-rate number from
+   the callout rather than carving out an exception in §5: the callout's job
+   (making the host-knowledge rule unmissable) does not need the number. The
+   sentence now reads "is why switching has the edge over staying," with the
+   exact figure deferred to where the page actually proves it.
+
 ### Revision 6 (this round) — fourth skeptic pass, eleven copy findings plus two design-constraint escalations
 
 All eleven findings were prose-accuracy or prose-consistency problems in
@@ -1043,6 +1155,19 @@ ui-engineer (§3 Beat 2, §3 Beat 3, §4 items 7-8), not as copy changes.
    up" — it now directs the reader to compare Routes 1 and 2 specifically
    (the two rows that do mean the same thing across both tables) and flags
    that Route 3 is not expected to line up.
+
+   **Correction (revision 7): this item was wrong, not just a design choice.**
+   The knowing host's Route 3, as recorded above, was never actually about
+   the car's location at all, it was about the player's own door, which
+   isn't a member of the "where is the car" partition the other two routes
+   use. That's not a second legitimate partition to contrast against the
+   random host's table, it's an error: the partition is fixed (where the car
+   is) across every route in both tables, so a row that partitions on
+   something else doesn't belong. Once Route 3 is restated correctly on the
+   car's location, it *is* the same partition as the random host's Route 3,
+   row for row, and the two tables' Route 3 rows differ only in why they
+   zero out, not in what they're about. See revision 7 item 1 for the fix.
+   Do not use this item as guidance; it is kept here only for traceability.
 4. `knowingHost.workedDivision` claimed dividing by Routes 1+2's total is
    meaningfully different from dividing by all three routes' total ("not all
    three") — vacuous, since Route 3 is exactly zero and the two totals are

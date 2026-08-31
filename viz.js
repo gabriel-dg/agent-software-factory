@@ -112,6 +112,26 @@
     );
   }
 
+  // Formats a sorted list of opened-door numbers for the {{openedList}}
+  // placeholder in round100.hostRevealText without enumerating all of
+  // them: at 100 doors that's 98 comma-separated integers (measured at
+  // 383 characters), burying the one sentence that's supposed to carry
+  // the reveal's intuition under a wall of digits the 100-door grid
+  // already renders visually. Below a small threshold every door is
+  // still listed (nothing to truncate); above it, only the leading
+  // doors are named and the rest are summarized by an exact count, never
+  // implying a door was opened that wasn't (the count is the true
+  // remainder, `sortedDoors.length - LEAD`). The copy string itself
+  // (round100.hostRevealText) is untouched — this only changes what gets
+  // substituted for its {{openedList}} placeholder.
+  function formatOpenedList(sortedDoors) {
+    var LEAD = 5;
+    if (sortedDoors.length <= LEAD + 1) return sortedDoors.join(", ");
+    var lead = sortedDoors.slice(0, LEAD).join(", ");
+    var rest = sortedDoors.length - LEAD;
+    return lead + ", and " + rest + " more";
+  }
+
   function statBars(stayPct, switchPct, stayLabel, switchLabel) {
     return (
       '<div class="stat-bars">' +
@@ -786,7 +806,7 @@
       '<span class="door-icons"><span class="icon icon-remaining"></span></span>' +
       '<span class="door-num">' + game.remainingDisplay + "</span>";
 
-    var openedList = game.hostDisplay.join(", ");
+    var openedList = formatOpenedList(game.hostDisplay);
 
     after.innerHTML =
       "<p>" + fillTemplate(c.hostRevealText, {

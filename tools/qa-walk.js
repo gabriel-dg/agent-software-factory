@@ -2,8 +2,8 @@
 //
 // Owned exclusively by qa-walker. Drives the repo root's index.html in a
 // real, visible Chromium browser via Playwright and checks it against the
-// beat sequence documented in docs/SPEC.md (Revision 6) and the copy in
-// copy.json (Revision 6). Never edits any file in the explainer project.
+// beat sequence documented in docs/SPEC.md (Revision 7) and the copy in
+// copy.json (Revision 7). Never edits any file in the explainer project.
 // Run from this file's own directory (tools/, that's where Playwright
 // resolves from), or from the repo root:
 //
@@ -42,6 +42,22 @@
 // normalizes both back to tokens.css custom-property names, and reports any
 // rendered <fg-token> ON <bg-token> pair that has no matching `CONTRAST`
 // line in docs/DESIGN.md's "## Contrast pairs" ledger.
+//
+// Revision 7 build additions specifically verified here (index.html and
+// viz.js were re-transcribed/changed against a revised copy.json):
+//   - The embedded #copy JSON block was re-transcribed; checked to parse and
+//     to render the CURRENT strings, not stale ones. Two specific old
+//     strings ("you had the goat behind the door that actually got opened"
+//     and "the entire reason switching wins 2 of 3 times") are asserted
+//     absent anywhere in rendered text (see bannedPhrases), and Beat 1's
+//     mechanismCallout is asserted to contain its exact rewritten sentence.
+//   - viz.js's new formatOpenedList helper (line 127): the round100 reveal
+//     sentence is asserted to render the truncated form ("N1..N5, and K
+//     more"), never the full 98-number enumeration, never a literal
+//     {{openedList}}, with leading-count + K always summing to 98 and
+//     cross-checked against the DOM's actual opened doors -- verified
+//     across 4 separate 100-door rounds (player's door and remaining door
+//     vary each round) via checkOpenedListTruncation().
 //
 // The resting-state sweep above cannot see :hover-only styles (a static
 // getComputedStyle pass never triggers a pseudo-class). DESIGN.md's ledger
@@ -621,6 +637,110 @@ async function checkBeat2BadgeInvariant(page, beatLabel) {
   }
 }
 
+
+// -----------------------------------------------------------------------
+// viz.js's formatOpenedList helper (round100's {{openedList}} placeholder).
+// At doorCount=100 the host always opens exactly 98 doors (100 - the
+// reader's own door - the one remaining closed door), so the rendered
+// sentence must read as the truncated form ("N1, N2, N3, N4, N5, and K
+// more", LEAD=5), never the full 98-number enumeration, {{openedList}}
+// must never be left as a literal placeholder, and the leading-numbers
+// count plus the "and K more" count must always sum to 98 -- checked
+// fresh on every round this is called for, since which specific doors get
+// listed varies round to round even though the total is fixed.
+// -----------------------------------------------------------------------
+async function checkOpenedListTruncation(page, beatLabel) {
+  const afterText = await elementText(page, "#round100-after");
+  const m = afterText.match(/opens 98 doors \(([^)]*)\), every single one a goat/);
+  if (!m) {
+    fail(
+      beatLabel,
+      "#round100-after",
+      'hostRevealText renders "The host opens 98 doors (...), every single one a goat."',
+      afterText.slice(0, 300),
+      await shot(page, `FAIL-${beatLabel}-openedlist-missing.png`)
+    );
+    return null;
+  }
+  const listStr = m[1];
+  if (listStr.includes("{{")) {
+    fail(
+      beatLabel,
+      "#round100-after",
+      "{{openedList}} placeholder substituted with real door numbers, never left literal",
+      listStr,
+      await shot(page, `FAIL-${beatLabel}-openedlist-placeholder.png`)
+    );
+    return null;
+  }
+
+  const truncMatch = listStr.match(/^((?:\d+, )*\d+), and (\d+) more$/);
+  if (!truncMatch) {
+    fail(
+      beatLabel,
+      "#round100-after openedList",
+      'truncated form "N1, N2, N3, N4, N5, and K more" (viz.js formatOpenedList), not the full 98-number enumeration',
+      listStr,
+      await shot(page, `FAIL-${beatLabel}-openedlist-not-truncated.png`)
+    );
+    return null;
+  }
+
+  const leadNumbers = truncMatch[1].split(", ").map(Number);
+  const restCount = parseInt(truncMatch[2], 10);
+  const total = leadNumbers.length + restCount;
+
+  if (total !== 98) {
+    fail(
+      beatLabel,
+      "#round100-after openedList",
+      'leading-numbers count plus the "and N more" count sum to 98 (the true total doors opened at doorCount=100)',
+      `leadCount=${leadNumbers.length}, restCount=${restCount}, sum=${total}, raw="${listStr}"`,
+      await shot(page, `FAIL-${beatLabel}-openedlist-sum-mismatch.png`)
+    );
+  }
+  if (leadNumbers.length !== 5) {
+    fail(
+      beatLabel,
+      "#round100-after openedList",
+      "exactly 5 leading door numbers shown before truncation (viz.js formatOpenedList's LEAD=5)",
+      `leadCount=${leadNumbers.length}, raw="${listStr}"`,
+      await shot(page, `FAIL-${beatLabel}-openedlist-lead-count.png`)
+    );
+  }
+
+  // Cross-check the leading numbers against the doors actually rendered as
+  // host-opened in the live DOM, so this isn't just checking that the
+  // string is well-formed -- it must also be TRUE for this specific round.
+  const actualOpened = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll("#round100-doors .door-host-opened .door-num"))
+      .map((el) => parseInt(el.textContent, 10))
+      .sort((a, b) => a - b);
+  });
+  if (actualOpened.length !== total) {
+    fail(
+      beatLabel,
+      "#round100-doors .door-host-opened",
+      `${total} doors actually rendered as host-opened in the DOM (matching the sentence's stated total)`,
+      `actual DOM host-opened door count: ${actualOpened.length}`,
+      await shot(page, `FAIL-${beatLabel}-openedlist-dom-count-mismatch.png`)
+    );
+  }
+  const expectedLead = actualOpened.slice(0, 5).join(",");
+  const actualLead = leadNumbers.join(",");
+  if (expectedLead !== actualLead) {
+    fail(
+      beatLabel,
+      "#round100-after openedList",
+      `rendered leading numbers (${actualLead}) match the first 5 sorted actually-opened door numbers in the DOM (${expectedLead})`,
+      `rendered=${actualLead}, actual DOM=${expectedLead}`,
+      await shot(page, `FAIL-${beatLabel}-openedlist-lead-mismatch.png`)
+    );
+  }
+
+  return { leadNumbers, restCount, total, listStr };
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: false });
   const context = await browser.newContext();
@@ -783,6 +903,11 @@ async function main() {
     await assertIncludes(page, "#beat-rules", "he picks between them with a fair coin flip", "beat1", "rules.steps[6] (tie-break rule)");
     await assertIncludes(page, "#beat-rules", "The one rule everything depends on", "beat1", "rules.mechanismCallout.label");
     await assertIncludes(page, "#beat-rules", "We'll prove that part later", "beat1", "rules.mechanismCallout.text (points forward to Beat 3's route tables)");
+    // Revision 7 finding 3: Beat 1 is a static read, before the reader has
+    // played, seen the enumeration, or watched an aggregate -- the callout
+    // must defer the exact win-rate figure rather than asserting it as
+    // settled fact. Exact rewritten sentence, verbatim.
+    await assertIncludes(page, "#beat-rules", "is why switching has the edge over staying, and the next few sections prove exactly how much of one", "beat1", "rules.mechanismCallout.text (revision 7: win-rate figure deferred, no settled-fact overclaim)");
 
     // Host rule must be the last, visually distinct step.
     const lastRuleClass = await page.evaluate(() => {
@@ -943,7 +1068,9 @@ async function main() {
     await assertIncludes(page, "#beat-mechanism", "The real host: knows where the car is, breaks ties with a fair coin", "beat3", "whyYourDoorDoesntMove.knowingHost.label");
     await assertIncludes(page, "#beat-mechanism", "Route 1: you had the car", "beat3", "knowingHost.routes[0].label");
     await assertIncludes(page, "#beat-mechanism", "Route 2: you had the other goat", "beat3", "knowingHost.routes[1].label");
-    await assertIncludes(page, "#beat-mechanism", "Route 3: you had the goat behind the door that actually got opened", "beat3", "knowingHost.routes[2].label (zero-probability route)");
+    await assertIncludes(page, "#beat-mechanism", "Route 3: the car was behind the door that got opened", "beat3", "knowingHost.routes[2].label (zero-probability route, revision 7 corrected partition -- was wrongly about the player's own door, now correctly about the car's location)");
+    await assertIncludes(page, "#beat-mechanism", "The host can never open the door hiding the car, so this case is ruled out by the rule itself", "beat3", "knowingHost.routes[2].detail (revision 7 corrected reasoning)");
+    await assertIncludes(page, "#beat-mechanism", "The product is 1/3 x 1 = 1/3", "beat3", "knowingHost.routes[1].detail (revision 7 fix: honest multiplication, 1/3 x 1 = 1/3, not the old false '2 in 6')");
     await assertIncludes(page, "#beat-mechanism", "These three routes cover every possibility", "beat3", "knowingHost.workedDivision");
     await assertIncludes(page, "#beat-mechanism", "Route 1: (1/6) / (3/6) = 1/3", "beat3", "knowingHost.workedDivision (renormalized arithmetic)");
     await assertIncludes(page, "#beat-mechanism", "Conditional on watching this exact door open: 1 in 3 you had the car (stay wins), 2 in 3 the other closed door has it (switch wins).", "beat3", "knowingHost.conclusion");
@@ -952,12 +1079,13 @@ async function main() {
     // contrast instead of asserting it).
     await assertIncludes(page, "#beat-mechanism", "For comparison: Host B, who has no idea where the car is and opens at random", "beat3", "whyYourDoorDoesntMove.randomHost.label");
     await assertIncludes(page, "#beat-mechanism", "Run the identical three routes on Host B, further down", "beat3", "randomHost.intro");
-    await assertIncludes(page, "#beat-mechanism", "Route 3: a different question, the car itself was behind the door that got opened", "beat3", "randomHost.routes[2].label (distinct zero-probability reasoning from knowing host's Route 3)");
+    await assertIncludes(page, "#beat-mechanism", "Same partition as the knowing host's Route 3 above", "beat3", "randomHost.routes[2].detail (revision 7: label now IDENTICAL text to knowingHost's Route 3, 'Route 3: the car was behind the door that got opened' -- the tables line up row for row; only the detail's stated reason for the zero differs)");
     await assertIncludes(page, "#beat-mechanism", "Only Routes 1 and 2 match what you watched.", "beat3", "randomHost.workedDivision");
     await assertIncludes(page, "#beat-mechanism", "1 in 2, not 1 in 3 versus 2 in 3.", "beat3", "randomHost.conclusion");
 
-    await assertIncludes(page, "#beat-mechanism", "Compare Routes 1 and 2 across both tables", "beat3", "whyYourDoorDoesntMove.comparisonTakeaway");
-    await assertIncludes(page, "#beat-mechanism", "Route 3 answers a different question in each table", "beat3", "comparisonTakeaway (revision 6: Route 3 rows do not correspond across tables)");
+    await assertIncludes(page, "#beat-mechanism", "Compare all three routes across both tables", "beat3", "whyYourDoorDoesntMove.comparisonTakeaway (revision 7: tables now line up row for row, Route 3 included)");
+    await assertIncludes(page, "#beat-mechanism", "and now they line up", "beat3", "comparisonTakeaway (revision 7: Route 3 partition corrected so it lines up, superseding revision 6's 'don't expect it to line up')");
+    await assertIncludes(page, "#beat-mechanism", "What actually distinguishes the two hosts is Route 2.", "beat3", "comparisonTakeaway (real payload preserved across revisions)");
     await assertIncludes(page, "#beat-mechanism", "Here's what breaks without a fair coin.", "beat3", "whyYourDoorDoesntMove.fairnessNote");
     await assertIncludes(page, "#beat-mechanism", "a fixed preference, never a coin flip", "beat3", "fairnessNote (biased hypothetical host worked example)");
     await assertIncludes(page, "#beat-mechanism", "always switching still wins 2 of these 3 equally likely starting cases outright, the same aggregate 2/3", "beat3", "fairnessNote (revision 6: aggregate 2/3 unaffected by tie-break bias)");
@@ -1214,7 +1342,13 @@ async function main() {
   }
 
   // =======================================================================
-  // Beat 5 — round100 (100-door playable round)
+  // Beat 5 — round100 (100-door playable round). Looped across several
+  // rounds (task requirement), not just one, specifically to exercise
+  // viz.js's formatOpenedList helper (line 127) under varying player-pick /
+  // remaining-door combinations: sim.js's own internal RNG is independent
+  // of which display door number was clicked (see viz.js buildDoorMapping),
+  // so even clicking different door numbers each round is not required for
+  // variation, but is done anyway for extra coverage.
   // =======================================================================
   try {
     await assertUnlocked(page, "beat-round100", "beat5", "#beat-round100");
@@ -1227,57 +1361,85 @@ async function main() {
 
     await shot(page, "beat5-round100-pick.png");
 
-    // Pick Door 1 (aria-label "Door 1").
-    await page.locator('#round100-doors button[aria-label="Door 1"]').click();
+    const ROUNDS = 4;
+    const doorsToClick = [1, 50, 87, 23];
 
-    await page.waitForFunction(
-      () => {
-        const el = document.getElementById("round100-after");
-        return el && /The host opens 98 doors \(/.test(el.textContent);
-      },
-      { timeout: DEFAULT_TIMEOUT }
-    );
+    for (let r = 0; r < ROUNDS; r++) {
+      const beatLabel = `beat5-round${r + 1}`;
+      const doorN = doorsToClick[r % doorsToClick.length];
 
-    const round100AfterText = await elementText(page, "#round100-after");
-    if (/\{\{\s*\w+\s*\}\}/.test(round100AfterText)) {
-      fail("beat5", "#round100-after", "openedList/pickedDoor/remainingDoor substituted, no {{placeholder}} left", round100AfterText.slice(0, 400), await shot(page, "FAIL-beat5-placeholder.png"));
+      await page.locator(`#round100-doors button[aria-label="Door ${doorN}"]`).click();
+
+      await page.waitForFunction(
+        () => {
+          const el = document.getElementById("round100-after");
+          return el && /The host opens 98 doors \(/.test(el.textContent);
+        },
+        { timeout: DEFAULT_TIMEOUT }
+      );
+
+      const round100AfterText = await elementText(page, "#round100-after");
+      if (/\{\{\s*\w+\s*\}\}/.test(round100AfterText)) {
+        fail("beat5", "#round100-after", "openedList/pickedDoor/remainingDoor substituted, no {{placeholder}} left", round100AfterText.slice(0, 400), await shot(page, `FAIL-${beatLabel}-placeholder.png`));
+      }
+
+      // viz.js formatOpenedList: the rendered parenthetical must be the
+      // truncated form, never the full 98-number enumeration, {{openedList}}
+      // must never be left unsubstituted, and the leading-numbers count plus
+      // the "and N more" count must always sum to 98 -- checked fresh on
+      // every round, since the specific door numbers listed vary round to
+      // round even though the total (98) never does.
+      await checkOpenedListTruncation(page, beatLabel);
+
+      if (r === 0) {
+        await assertIncludes(page, "#round100-after", "The host made 98 decisions", "beat5", "round100.mechanismCallout");
+        await assertIncludes(page, "#round100-after", "about 1% it's the car", "beat5", "round100.oddsCallout");
+        await assertIncludes(page, "#round100-after", "1 time in 50", "beat5", "round100.mechanismCallout (corrected 1-in-50 luck figure)");
+        await assertIncludes(page, "#round100-after", "see the biased-host example above", "beat5", "round100.oddsCallout (cross-reference into Beat 3's fairnessNote)");
+
+        // Guardrail: must never say the host "couldn't" have done this by
+        // luck, nor claim an impossibility, nor use the old
+        // order-of-magnitude-wrong 1-in-2^98 luck estimate.
+        if (/\bimpossible\b/i.test(round100AfterText)) {
+          fail("beat5", "#round100-after", 'no "impossible" overclaim about the 98-door reveal', round100AfterText.slice(0, 400), await shot(page, "FAIL-beat5-impossible-overclaim.png"));
+        }
+        if (/1-in-2\^98|2\^98/i.test(round100AfterText)) {
+          fail("beat5", "#round100-after", "no 1-in-2^98 luck estimate (superseded, off by ~28 orders of magnitude)", round100AfterText.slice(0, 400), await shot(page, "FAIL-beat5-old-luck-estimate.png"));
+        }
+
+        await shot(page, "beat5-round100-reveal.png");
+      } else {
+        await shot(page, `${beatLabel}-reveal.png`);
+      }
+
+      // Unlike round3, round100 has no separate "reveal" button step —
+      // clicking stay/switch immediately renders the result.
+      await page.locator("#round100-choice-buttons button", { hasText: "Switch to Door" }).click();
+
+      await page.waitForSelector("#round100-after .reveal-row", { timeout: DEFAULT_TIMEOUT });
+      const result100Text = await elementText(page, "#round100-after");
+      const known100Outcomes = [
+        "You switched, and there's the car.",
+        "You switched, and that's a goat."
+      ];
+      if (!known100Outcomes.some((s) => result100Text.includes(s))) {
+        fail("beat5", "#round100-after", `one of: ${known100Outcomes.join(" | ")}`, result100Text.slice(0, 400), await shot(page, `FAIL-${beatLabel}-unexpected-result-text.png`));
+      }
+
+      if (r === 0) {
+        await shot(page, "beat5-round100-result.png");
+        await checkNoPlaceholders(page, "beat5");
+      }
+
+      if (r < ROUNDS - 1) {
+        await page.locator("#round100-post-actions button", { hasText: "Play another 100-door round" }).click();
+        await page.waitForSelector("#round100-pick-prompt", { timeout: DEFAULT_TIMEOUT });
+      } else {
+        await page.locator("#round100-post-actions button", { hasText: "Show me this at scale too" }).click();
+      }
     }
-    await assertIncludes(page, "#round100-after", "The host made 98 decisions", "beat5", "round100.mechanismCallout");
-    await assertIncludes(page, "#round100-after", "about 1% it's the car", "beat5", "round100.oddsCallout");
-    await assertIncludes(page, "#round100-after", "1 time in 50", "beat5", "round100.mechanismCallout (corrected 1-in-50 luck figure)");
-    await assertIncludes(page, "#round100-after", "see the biased-host example above", "beat5", "round100.oddsCallout (cross-reference into Beat 3's fairnessNote)");
-
-    // Guardrail: must never say the host "couldn't" have done this by luck,
-    // nor claim an impossibility, nor use the old order-of-magnitude-wrong
-    // 1-in-2^98 luck estimate.
-    if (/\bimpossible\b/i.test(round100AfterText)) {
-      fail("beat5", "#round100-after", 'no "impossible" overclaim about the 98-door reveal', round100AfterText.slice(0, 400), await shot(page, "FAIL-beat5-impossible-overclaim.png"));
-    }
-    if (/1-in-2\^98|2\^98/i.test(round100AfterText)) {
-      fail("beat5", "#round100-after", "no 1-in-2^98 luck estimate (superseded, off by ~28 orders of magnitude)", round100AfterText.slice(0, 400), await shot(page, "FAIL-beat5-old-luck-estimate.png"));
-    }
-
-    await shot(page, "beat5-round100-reveal.png");
-
-    // Unlike round3, round100 has no separate "reveal" button step —
-    // clicking stay/switch immediately renders the result.
-    await page.locator("#round100-choice-buttons button", { hasText: "Switch to Door" }).click();
-
-    await page.waitForSelector("#round100-after .reveal-row", { timeout: DEFAULT_TIMEOUT });
-    const result100Text = await elementText(page, "#round100-after");
-    const known100Outcomes = [
-      "You switched, and there's the car.",
-      "You switched, and that's a goat."
-    ];
-    if (!known100Outcomes.some((s) => result100Text.includes(s))) {
-      fail("beat5", "#round100-after", `one of: ${known100Outcomes.join(" | ")}`, result100Text.slice(0, 400), await shot(page, "FAIL-beat5-unexpected-result-text.png"));
-    }
-
-    await shot(page, "beat5-round100-result.png");
-    await checkNoPlaceholders(page, "beat5");
-
-    await page.locator("#round100-post-actions button", { hasText: "Show me this at scale too" }).click();
   } catch (e) {
+
     fail("beat5", "beat-round100", "beat 5 interaction completes without exception", String(e), await shot(page, "FAIL-beat5-exception.png"));
   }
 
@@ -1495,10 +1657,11 @@ async function main() {
   // page must never contain again, not a subjective content review).
   //
   // The first six entries are the pre-existing guardrails, unchanged and
-  // preserved verbatim. The final six entries are ADDITIONS covering the
-  // exact quoted-as-literal superseded phrasings documented in SPEC.md's
-  // Revision 6 changelog (§7 findings 1, 2, 3, 4, 8, 11) — new regression
-  // guards, not replacements for any prior check.
+  // preserved verbatim. The next six cover Revision 6's fixed overclaims
+  // (SPEC.md §7 findings 1, 2, 3, 4, 8, 11). The final five cover Revision
+  // 7's fixed findings from the external review (superseded Route 3
+  // partition, non-multiplication, and Beat 1's premature win-rate claim)
+  // -- new regression guards, not replacements for any prior check.
   // ---------------------------------------------------------------------
   await checkNoPlaceholders(page, "final");
   const finalBodyText = await bodyText(page);
@@ -1516,7 +1679,13 @@ async function main() {
     "line the two tables up", // finding 3: Route 3 rows forced into a false correspondence
     "not all three", // finding 4: vacuous workedDivision clause
     "guaranteed, not lucky, to dodge the car every time", // finding 8: closing claim disproven by fairnessNote's own biased host
-    "Not drifting toward 50/50" // finding 11: unconditional claim a noisy small batch could contradict on-page
+    "Not drifting toward 50/50", // finding 11: unconditional claim a noisy small batch could contradict on-page
+    // --- New guardrails added for Revision 7's fixed findings (external review) ---
+    "you had the goat behind the door that actually got opened", // revision 7 finding 1: Route 3 was wrongly about the player's own door, not the car's location; must not reappear anywhere (task-flagged banned string)
+    "the entire reason switching wins 2 of 3 times", // revision 7 finding 3: Beat 1 must not assert the win-rate fraction as settled fact before it is earned (task-flagged banned string)
+    "Route 3 answers a different question in each table", // revision 7 finding 1: superseded -- the tables now line up row for row
+    "don't expect it to line up", // revision 7 finding 1: superseded -- the tables now line up
+    "1/3 x 1 = 2 in 6" // revision 7 finding 2: non-multiplication (1/3 x 1 is 1/3, not '2 in 6'); the honest product/conversion is now stated as two separate sentences
   ];
   for (const phrase of bannedPhrases) {
     if (finalBodyText.includes(phrase)) {

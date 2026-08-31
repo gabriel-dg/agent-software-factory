@@ -531,7 +531,7 @@
     ],
     "mechanismCallout": {
       "label": "The one rule everything depends on",
-      "text": "The host can never open your door or the car's door. Two-thirds of the time that leaves him exactly one legal door: no choice. That forced choice, across the three equally likely starting cases, is the entire reason switching wins 2 of 3 times, coin or no coin. The coin only comes in for a narrower question: once you've seen exactly which door he opened, does that specific door tell you anything extra? Keeping that answer honest needs a fair coin. We'll prove that part later."
+      "text": "The host can never open your door or the car's door. Two-thirds of the time that leaves him exactly one legal door: no choice. That forced choice, across the three equally likely starting cases, is why switching has the edge over staying, and the next few sections prove exactly how much of one. The coin only comes in for a narrower question: once you've seen exactly which door he opened, does that specific door tell you anything extra? Keeping that answer honest needs a fair coin. We'll prove that part later."
     },
     "continueButton": "Got it, let's play"
   },
@@ -596,11 +596,11 @@
             },
             {
               "label": "Route 2: you had the other goat",
-              "detail": "Prior odds: 1 in 3. He wasn't choosing anything: exactly one legal door, and it happened to be this one. No coin to divide by, because there was no choice. Joint probability: 1/3 x 1 = 2 in 6."
+              "detail": "Prior odds: 1 in 3. He wasn't choosing anything: exactly one legal door, and it happened to be this one. No coin to divide by, because there was no choice. The product is 1/3 x 1 = 1/3. To compare it against the other rows on a common denominator, that's written as 2/6."
             },
             {
-              "label": "Route 3: you had the goat behind the door that actually got opened",
-              "detail": "Prior odds: 1 in 3, same as the others, but this route contributes zero. If you'd picked the goat behind the door he just opened, that door would BE your door, and the host can never open your door. Ruled out by the rule itself. Joint probability: 0."
+              "label": "Route 3: the car was behind the door that got opened",
+              "detail": "Prior odds: 1 in 3, same as the other two, but this route contributes zero. The host can never open the door hiding the car, so this case is ruled out by the rule itself, not by anything you observed. Joint probability: 0."
             }
           ],
           "workedDivision": "These three routes cover every possibility: 1/6 + 2/6 + 0 = 3/6 (that total, 1/2, is the overall chance this exact door gets opened at all). Route 3 is impossible, so Routes 1 and 2 are what actually produced what you watched. Divide each by the total: Route 1: (1/6) / (3/6) = 1/3. Route 2: (2/6) / (3/6) = 2/3.",
@@ -623,15 +623,15 @@
               "detail": "Prior odds: 1 in 3. The car is behind the remaining closed door, but the random host doesn't know that, so he still opens each remaining door with equal odds, and happens to pick this goat door instead of the car's. Joint probability: 1/3 x 1/2 = 1 in 6. Unlike the knowing host, nothing forced him to leave the car's door shut, he just happened to. That's the whole difference: the coin that only touched Route 1 in the table above now touches Route 2 too, so it stays at 1 in 6 instead of doubling to 2 in 6."
             },
             {
-              "label": "Route 3: a different question, the car itself was behind the door that got opened",
-              "detail": "This isn't the mirror of the knowing host's Route 3 above (your own door can never be the door that gets opened, in either table, so that case doesn't need a row here either). This route asks something else: what if the car itself sat behind the door that opened? Prior odds: 1 in 3. A random host opening this exact door would then reveal the car, not a goat, which isn't what you saw. Conditional on 'this door opened and showed a goat,' this route contributes zero, ruled out by what you actually observed, not by any rule."
+              "label": "Route 3: the car was behind the door that got opened",
+              "detail": "Same partition as the knowing host's Route 3 above: the car sits behind the door that got opened. Prior odds: 1 in 3. A random host opening this exact door would then reveal the car, not a goat, which isn't what you saw. This route contributes zero too, but for a different reason than the knowing host's Route 3: there, the zero comes from a rule (he's forbidden to open the car's door); here, the zero comes from what you actually observed (you saw a goat, so this didn't happen). Joint probability: 0."
             }
           ],
           "workedDivision": "Only Routes 1 and 2 match what you watched. Add them: 1/6 + 1/6 = 2/6 (that total, 1/3, is the chance this door opens and shows a goat at all). Divide each by that total: Route 1: (1/6) / (2/6) = 1/2. Route 2: (1/6) / (2/6) = 1/2.",
           "conclusion": "1 in 2, not 1 in 3 versus 2 in 3. With a random host, the door he opened tells you nothing extra: staying and switching are dead even. Running Host B below confirms this in aggregate too.",
           "conclusion_assert": { "doorCount": 3, "hostMode": "random", "metric": "noRevealAndSwitchWins", "expected": 0.5, "tolerance": 0.06 }
         },
-        "comparisonTakeaway": "Compare Routes 1 and 2 across both tables, the two rows that mean the same thing in each (Route 3 answers a different question in each table, so don't expect it to line up): the difference is one thing. Knowing host: Route 2 has no coin flip, he's forced, so it's worth twice Route 1 (2/6 vs 1/6). Random host: Route 2 gets the same coin flip as Route 1, so they're equal (1/6 and 1/6). One forcing rule, applied to one of the two live routes, is the entire reason pixel-identical evidence supports a 2/3 edge from one host and a flat 50/50 from the other.",
+        "comparisonTakeaway": "Compare all three routes across both tables: same partition row for row (car behind your door, car behind the other closed door, car behind the door that got opened), and now they line up. Only the reason each table's Route 3 zeroes out differs: the knowing host's is ruled out by his rule, the random host's is ruled out by what you observed. What actually distinguishes the two hosts is Route 2. Knowing host: Route 2 has no coin flip, he's forced, so it's worth twice Route 1 (2/6 vs 1/6). Random host: Route 2 gets the same coin flip as Route 1, so they're equal (1/6 and 1/6). One forcing rule, applied to one of the two live routes, is the entire reason pixel-identical evidence supports a 2/3 edge from one host and a flat 50/50 from the other.",
         "fairnessNote": "Here's what breaks without a fair coin. Take a hypothetical host who, on a free choice, always opens the lower-numbered door (a fixed preference, never a coin flip). Not simulated on this page, sim.js only models the fair-coin host and random Host B, so treat this as a hand-worked side calculation. You picked Door 1. Car behind Door 1: he always opens Door 2, never Door 3. Car behind Door 2: forced to open Door 3. Car behind Door 3: forced to open Door 2. If he opens Door 3 (his non-favorite), that only happens in the 'car behind Door 2' case: switching wins with total certainty. If he opens Door 2 (his favorite), that's consistent with two cases at once (car behind Door 1, or forced by car behind Door 3): the odds collapse to a flat 50/50. Same guaranteed goat reveal every round, exactly like the real host, and yet the odds swing from a certain win to a coin flip depending only on which door he opens. A guaranteed reveal isn't automatically uninformative. What keeps the real host's table even, the same 1-to-2 ratio no matter which door opens, is specifically that his coin is fair. That's why Beat 1 insists on it. One thing doesn't move even in this biased hypothetical: always switching still wins 2 of these 3 equally likely starting cases outright, the same aggregate 2/3, coin or no coin, exactly as the three-case table showed. What the biased coin breaks is only the narrower, specific-door question; the aggregate strategy is safe from tie-break bias, the fine-grained one isn't."
       }
     },
