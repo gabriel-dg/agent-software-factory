@@ -410,9 +410,9 @@ four more defects. Three of them had qa-walker's PASS on them at the time.
 Every one of these is the same failure shape as the bugs the pipeline did
 catch: a verifier checking correctly against a specification that does not
 mention the thing being checked. The pipeline never validates that its own
-specification is complete, and no layer in it can. The count in the list
-above is therefore the count of defects the pipeline found, not the count of
-defects that existed.
+specification is complete, and no layer in it can. The nine bugs listed under
+"What the pipeline actually found" are therefore the count of defects the
+pipeline found, not the count of defects that existed.
 
 ## What it cost
 
