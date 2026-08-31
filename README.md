@@ -151,7 +151,7 @@ flowchart TD
     LD["1. learning-designer<br/>writes SPEC.md, copy.json"]:::writer
     LD --> HUMAN1["human approval<br/>pipeline stops here"]:::human
     HUMAN1 --> SK1["2. skeptic<br/>reads spec and copy"]:::readonly
-    SK1 -->|"findings, max 1 round, then continue"| LD
+    SK1 -->|"findings, max 1 round<br/>pre-build review only"| LD
     SK1 --> SE
     SK1 --> AD
 
@@ -214,7 +214,11 @@ The full sequence, from `CLAUDE.md`:
    review before anything else runs.**
 2. skeptic reviews `SPEC.md` and `copy.json` alone, before anything gets
    built. Findings route back to learning-designer. Max one revision round,
-   then the pipeline continues regardless.
+   then the pipeline continues regardless. That limit is per phase, not per
+   project: it caps this pre-build review only and does not cap the
+   post-build review rounds in step 8. skeptic ran four times in the
+   reference run, once here and three times over the built page, which is
+   why `docs/SPEC.md` records four skeptic passes.
 3. art-director and sim-engineer run in parallel (they own disjoint files,
    so there's nothing to merge).
 4. math-verifier runs the simulation check. On FAIL, back to sim-engineer.
@@ -226,8 +230,12 @@ The full sequence, from `CLAUDE.md`:
 7. qa-walker drives the built page in a real browser. On FAIL, back to
    ui-engineer. Max three rounds, then escalate.
 8. skeptic and design-reviewer run in parallel over the finished page.
-9. skeptic's findings route to learning-designer, design-reviewer's findings
-   route to ui-engineer.
+9. skeptic's findings route to learning-designer. design-reviewer's findings
+   route by the file the fix lands in: markup and wiring to ui-engineer,
+   token values and anything in `DESIGN.md` to art-director. A qa-walker
+   ledger mismatch routes by cause: a pair the design never intended is
+   ui-engineer's, a pair the design intends but `DESIGN.md` never declared is
+   art-director's.
 10. Any change to `sim.js` re-triggers the simulation check. Any change to
     `tokens.css` or `DESIGN.md` re-triggers the contrast check. Any change
     to `copy.json` re-triggers the claim check. Any change to `index.html`
@@ -329,7 +337,11 @@ text, plausibly would not have caught, because each one reads as correct on
 a casual pass and only breaks under a specific kind of scrutiny.
 
 These are the evidence for the answer given above, and they are specific to
-this domain on purpose.
+this domain on purpose. The count is one bug per defect in the shipped page
+or its spec that somebody had to go back and fix. The nine below are the ones
+the pipeline's own agents and checks surfaced; the four in the next section
+are the ones it did not. `docs/LESSONS.md` uses the same count and the same
+definition.
 
 - **A false general law stated as if it were a proof.** An early draft
   explained why the host's reveal doesn't update your own door's odds with

@@ -2,14 +2,14 @@
 
 | agent | model | tools | owns (exclusive write) | reads |
 |---|---|---|---|---|
-| learning-designer | opus | Read, Write, Edit | docs/SPEC.md, copy.json | all |
-| art-director | opus | Read, Write, Edit | tokens.css, docs/DESIGN.md | docs/SPEC.md |
+| learning-designer | sonnet | Read, Write, Edit | docs/SPEC.md, copy.json | all |
+| art-director | sonnet | Read, Write, Edit | tokens.css, docs/DESIGN.md | docs/SPEC.md |
 | sim-engineer | sonnet | Read, Write, Edit | sim.js | docs/SPEC.md |
 | math-verifier | haiku | Read, Write, Bash | verification/test-sim.js, verification/check-contrast.js, verification/check-claims.js | sim.js, tokens.css, docs/DESIGN.md, copy.json |
 | ui-engineer | sonnet | Read, Write, Edit | index.html, viz.js | all except sim.js internals |
 | qa-walker | sonnet | Read, Write, Bash | tools/qa-walk.js | index.html, viz.js, docs/SPEC.md, copy.json |
 | skeptic | opus | Read | nothing | docs/SPEC.md, copy.json |
-| design-reviewer | opus | Read | nothing | index.html, viz.js, docs/DESIGN.md, tokens.css |
+| design-reviewer | sonnet | Read | nothing | index.html, viz.js, docs/DESIGN.md, tokens.css |
 
 ## Product
 A single-page interactive explainer that convinces a skeptic the Monty Hall

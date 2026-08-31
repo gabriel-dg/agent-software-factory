@@ -937,19 +937,23 @@ state** (what the reader should believe/know before moving on).
 The following distinct interactive capabilities are required somewhere in
 the sequence above. This is a requirements list, not an API — sim-engineer
 and ui-engineer own how these are implemented against `sim.js`'s
-`playRound(doorCount, switchStrategy, rng)` and
-`runTrials(n, doorCount, strategy, seed)`.
+`playRound(doorCount, switchStrategy, hostMode, rng)` and
+`runTrials(n, doorCount, strategy, hostMode, seed)`.
 
 1. Single interactive round at doorCount = 3, player-chosen switch/stay,
    host behavior always constrained (knowing host) — Beat 2.
 2. A way to contrast "knowing host" vs "random/unconstrained host"
    behavior in aggregate over many trials, including surfacing how often a
-   random host accidentally exposes the prize — Beat 3. This is the one
-   beat that needs host behavior to be a variable, not fixed; flag this to
-   sim-engineer explicitly since the documented `sim.js` signature does not
-   obviously expose a host-randomness parameter. Beat 3 also needs a static
-   (non-simulated) three-case enumeration display — this has no dynamic
-   values and can be pure copy/layout.
+   random host accidentally exposes the prize (Beat 3). This is the one
+   beat that needs host behavior to be a variable, not fixed: `sim.js`
+   already exposes this directly, since `hostMode` is a required parameter
+   of both `playRound` and `runTrials`, taking the string `"knowing"` or
+   `"random"`. Beat 3's two simulated modes map straight onto those two
+   values, and under `"random"` a round can come back with the
+   `prizeRevealed` outcome instead of a win or a loss, which `"knowing"`
+   never produces. Beat 3 also needs a static (non-simulated) three-case
+   enumeration display; this has no dynamic values and can be pure
+   copy/layout.
 3. Batch trial running with live/aggregate win-rate display at doorCount =
    3, both strategies — Beat 4.
 4. Single interactive round at doorCount = 100 with 98 doors opened by a
@@ -1062,6 +1066,40 @@ footer                  — closing credits/disclaimer, not a teaching beat
 ```
 
 ## 7. Revision log
+
+### Revision 8 (this round): docs/SPEC.md corrected to match sim.js's actual `hostMode` parameter
+
+An external review found that this document's §4 had drifted from the real
+`sim.js` contract. This is a documentation-only correction: `sim.js` was
+never wrong, this file was. No beat was added, removed, or reordered; no
+`_assert` value, `expected`, or `tolerance` was changed; `copy.json` was not
+touched in this round.
+
+The verified facts: `sim.js:98` defines
+`playRound(doorCount, switchStrategy, hostMode, rng)`, and `sim.js:187`
+defines `runTrials(n, doorCount, strategy, hostMode, seed)`. `hostMode` is
+the string `"knowing"` or `"random"`, and under `"random"` a round can come
+back with the outcome `"prizeRevealed"` instead of a win or a loss. Both
+signatures were already documented correctly elsewhere (for example, §7's
+revision 6 entry already cites the `hostMode === "random"` path by name and
+needed no change), so the drift was isolated to two spots in §4.
+
+1. §4's opening paragraph restated both exported signatures without
+   `hostMode`, as `playRound(doorCount, switchStrategy, rng)` and
+   `runTrials(n, doorCount, strategy, seed)`. Both are corrected to match
+   `sim.js` exactly, with `hostMode` in its real position ahead of `rng` and
+   `seed` respectively.
+2. §4 requirement item 2 carried a caveat, written before `hostMode` existed
+   in the implementation, warning that "the documented `sim.js` signature
+   does not obviously expose a host-randomness parameter" and telling
+   sim-engineer to be flagged about it. That gap was closed once `hostMode`
+   became a required parameter of both exports, so the warning described a
+   problem that no longer exists. Rewritten to state the actual contract:
+   `hostMode` is a required parameter taking `"knowing"` or `"random"`,
+   Beat 3's two simulated modes map directly onto those two values, and the
+   `"random"` mode is the one that can return `prizeRevealed`. Nothing is
+   flagged to sim-engineer here anymore because there is nothing unresolved
+   to flag.
 
 ### Revision 7 (this round): external review, three findings, all independently hand-verified
 

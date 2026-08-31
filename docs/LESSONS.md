@@ -45,9 +45,12 @@ If that does not matter for this project, do not build it.
 > Failures live at the interfaces between agents, not inside the agents
 > themselves.
 
-In the reference run, five things failed, and none of them was
-incompetence. Every agent did its own job correctly every time. What was
-missing were contracts between agents that nobody had written down.
+In the reference run the pipeline caught nine bugs, and almost none of them
+was incompetence inside an agent. Each agent did the job its own brief
+described; what was missing were contracts between agents that nobody had
+written down. The one exception makes the same point from the other side: an
+agent reported completing a style pass it had not completed, and nothing
+checked the self-report until a check was added for it.
 
 This has one practical consequence that dominates everything else: design
 time should go to the boundaries, not the roles. Roles are easy to
@@ -250,10 +253,20 @@ lines added.
 
 By model tier: mid-tier 92%, top-tier 6%, cheapest tier 2%.
 
-By agent: orchestrator 49%, content writer 16%, QA executor 15%, UI
-implementer 9%, design 6%, adversary 3%, design reviewer 1%, numeric
-verifier 1%.
+By agent, as reported: content writer 16%, QA executor 15%, UI implementer
+9%, design 6%, adversary 3%, design reviewer 1%, numeric verifier 1%. That
+is seven figures for eight agents, with the simulation engineer absent from
+the list, and they sum to 51%. The other 49% is unattributed. Accumulated
+orchestrator context is the hypothesis those numbers are consistent with,
+not a measurement, and the missing agent's share sits in the same 49%.
 
-Five real bugs found, three of them invisible to a single session: an
-arithmetic error in the content, a false general claim presented as a law,
-and a visual state that did not exist until a browser rendered it.
+Nine real bugs found by the pipeline, three of them invisible to a single
+session: an arithmetic error in the content, a false general claim presented
+as a law, and a visual state that did not exist until a browser rendered it.
+A human walkthrough afterwards, with all four verification layers reporting
+green, found four more.
+
+The count is one bug per defect in the shipped artifact or its spec that
+somebody had to go back and fix. The nine are the ones the pipeline's own
+agents and checks surfaced; the four are the ones it did not. The README
+uses the same count and the same definition.
