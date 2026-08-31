@@ -59,6 +59,66 @@ whichever agent does own that file.
 
 ## The pipeline
 
+```mermaid
+flowchart TD
+    ORCH["orchestrator<br/>routes every arrow below<br/>no agent calls another agent"]:::orch
+    ORCH --> LD
+
+    LD["1. learning-designer<br/>writes SPEC.md, copy.json"]:::writer
+    LD --> HUMAN1["human approval<br/>pipeline stops here"]:::human
+    HUMAN1 --> SK1["2. skeptic<br/>reads spec and copy"]:::readonly
+    SK1 -->|"findings, max 1 round, then continue"| LD
+    SK1 --> SE
+    SK1 --> AD
+
+    subgraph STEP3["3. parallel, disjoint files"]
+      direction LR
+      SE["sim-engineer<br/>writes sim.js"]:::writer
+      AD["art-director<br/>writes tokens.css, DESIGN.md"]:::writer
+    end
+
+    SE --> G1{"4. simulation check<br/>math-verifier<br/>blocks ui-engineer"}:::gate
+    AD --> G2{"5. contrast check<br/>math-verifier<br/>blocks ui-engineer"}:::gate
+    G1 -->|"FAIL, max 3 rounds"| SE
+    G2 -->|"FAIL, max 3 rounds"| AD
+    G1 -->|PASS| UI
+    G2 -->|PASS| UI
+
+    UI["6. ui-engineer<br/>writes index.html, viz.js"]:::writer
+    UI --> G3{"7. qa-walker in browser<br/>blocks a clean round"}:::gate
+    G3 -->|"FAIL, max 3 rounds"| UI
+    G3 -->|PASS| SK2
+    G3 -->|PASS| DR
+
+    subgraph STEP8["8. parallel review, read only"]
+      direction LR
+      SK2["skeptic<br/>judges the argument"]:::readonly
+      DR["design-reviewer<br/>judges design fidelity"]:::readonly
+    end
+
+    SK2 -->|"9. copy findings"| LD
+    DR -->|"9. design findings"| UI
+    LD -->|"copy.json changed"| G4{"claim check<br/>math-verifier<br/>blocks a clean round"}:::gate
+    G4 -->|FAIL| LD
+
+    G1 -.->|"rounds exhausted"| ESC["escalate to human"]:::human
+    G2 -.->|"rounds exhausted"| ESC
+    G3 -.->|"rounds exhausted"| ESC
+
+    classDef orch fill:#ede9fe,stroke:#6d28d9,color:#2e1065
+    classDef writer fill:#dbeafe,stroke:#1d4ed8,color:#0b2e6b
+    classDef readonly fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-dasharray:4 3
+    classDef gate fill:#fef3c7,stroke:#b45309,color:#3b2400
+    classDef human fill:#fee2e2,stroke:#b91c1c,color:#5a0f0f
+```
+
+Solid blue nodes write files and are the only agents that can. Dashed grey
+nodes are read-only and produce findings, never edits. Yellow diamonds are the
+four verification gates, run by math-verifier and qa-walker, neither of which
+may edit the files it checks. Red is where the pipeline hands control back to
+a human. Every arrow is the orchestrator making a routing decision; the agents
+have no channel to each other.
+
 The full sequence, from `CLAUDE.md`:
 
 1. learning-designer produces `SPEC.md` and `copy.json`. **Stops for human
