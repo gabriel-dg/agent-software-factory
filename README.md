@@ -46,6 +46,84 @@ narrow job description. No agent edits a file it doesn't own; an agent that
 needs a file changed reports the problem and the orchestrator routes it to
 whichever agent does own that file.
 
+```mermaid
+%%{init: {"flowchart": {"rankSpacing": 220, "nodeSpacing": 28, "curve": "basis"}}}%%
+flowchart LR
+    LD["learning-designer"]:::writer
+    AD["art-director"]:::writer
+    SE["sim-engineer"]:::writer
+    UI["ui-engineer"]:::writer
+    MV["math-verifier"]:::writer
+    QA["qa-walker"]:::writer
+    SK["skeptic"]:::readonly
+    DR["design-reviewer"]:::readonly
+
+    SPEC["docs/SPEC.md"]:::file
+    COPY["copy.json"]:::file
+    TOK["tokens.css"]:::file
+    DES["docs/DESIGN.md"]:::file
+    SIM["sim.js"]:::file
+    IDX["index.html"]:::file
+    VIZ["viz.js"]:::file
+    VER["verification/<br/>test-sim.js<br/>check-contrast.js<br/>check-claims.js"]:::file
+    QAW["tools/qa-walk.js"]:::file
+
+    LD ==> SPEC
+    LD ==> COPY
+    AD ==> TOK
+    AD ==> DES
+    SE ==> SIM
+    UI ==> IDX
+    UI ==> VIZ
+    MV ==> VER
+    QA ==> QAW
+
+    AD -.-> SPEC
+    SE -.-> SPEC
+    SE -. "test-sim.js only" .-> VER
+    UI -.-> SPEC
+    UI -.-> COPY
+    UI -.-> TOK
+    UI -.-> SIM
+    MV -.-> SIM
+    MV -.-> TOK
+    MV -.-> DES
+    MV -.-> COPY
+    QA -.-> SPEC
+    QA -.-> COPY
+    QA -.-> IDX
+    QA -.-> VIZ
+    QA -.-> DES
+    QA -.-> TOK
+    SK -.-> SPEC
+    SK -.-> COPY
+    DR -.-> IDX
+    DR -.-> VIZ
+    DR -.-> DES
+    DR -.-> TOK
+
+    linkStyle 9 stroke:#b45309,stroke-width:1.8px
+    linkStyle 10,11 stroke:#0d9488,stroke-width:1.8px
+    linkStyle 12,13,14,15 stroke:#8b5cf6,stroke-width:1.8px
+    linkStyle 16,17,18,19 stroke:#e11d48,stroke-width:1.8px
+    linkStyle 20,21,22,23,24,25 stroke:#3b82f6,stroke-width:1.8px
+    linkStyle 26,27 stroke:#65a30d,stroke-width:1.8px
+    linkStyle 28,29,30,31 stroke:#16a34a,stroke-width:1.8px
+
+    classDef writer fill:#dbeafe,stroke:#1d4ed8,color:#0b2e6b
+    classDef readonly fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-dasharray:4 3
+    classDef file fill:#ffffff,stroke:#374151,color:#111827
+```
+
+Thick solid arrows are exclusive write access. Exactly one agent points at
+each file, and no other agent may change it. Dotted arrows are reads, colored
+by the agent they leave so they can be followed across the crossings. skeptic
+and design-reviewer have no write arrow at all, which is the whole point of
+them; math-verifier and qa-walker write only their own harness files and read,
+never write, every file they check. learning-designer is the only agent with
+no read arrow: it starts the pipeline, and its definition lets it read
+anything for context without naming a specific input.
+
 | agent | model | tools | owns (exclusive write) | role |
 |---|---|---|---|---|
 | [learning-designer](.claude/agents/learning-designer.md) | sonnet | Read, Write, Edit | `docs/SPEC.md`, `copy.json` | Writes the pedagogical spec and every user-facing string. Decides what the page must teach and prove, not how it's built. |
