@@ -1578,6 +1578,25 @@ async function main() {
       if (answerSnippets[i] && !aText.includes(answerSnippets[i])) {
         fail("beat8", `faq item ${i} answer`, answerSnippets[i], aText.slice(0, 400), await shot(page, `FAIL-beat8-q${i}-answer-mismatch.png`));
       }
+
+      // Targeted check: faq.items[2].a ("What if the host doesn't actually
+      // know where the car is...") was re-transcribed this round. Confirm
+      // the new survivorship sentence renders IN FULL once this item is
+      // expanded -- this is the exact sentence the task called out, not
+      // just a prefix snippet like answerSnippets[2] already checks above.
+      if (i === 2) {
+        const requiredSentence = "Every spoiled round is one switching would have won; none of them is one switching would have lost.";
+        if (!aText.includes(requiredSentence)) {
+          fail(
+            "beat8",
+            "faq item 2 answer (faq.items[2].a)",
+            `renders verbatim once expanded: "${requiredSentence}"`,
+            aText.slice(0, 600),
+            await shot(page, "FAIL-beat8-q2-survivorship-sentence-missing.png")
+          );
+        }
+        await shot(page, "beat8-faq-item2-expanded.png");
+      }
     }
 
     await shot(page, "beat8-faq.png");
@@ -1685,7 +1704,14 @@ async function main() {
     "the entire reason switching wins 2 of 3 times", // revision 7 finding 3: Beat 1 must not assert the win-rate fraction as settled fact before it is earned (task-flagged banned string)
     "Route 3 answers a different question in each table", // revision 7 finding 1: superseded -- the tables now line up row for row
     "don't expect it to line up", // revision 7 finding 1: superseded -- the tables now line up
-    "1/3 x 1 = 2 in 6" // revision 7 finding 2: non-multiplication (1/3 x 1 is 1/3, not '2 in 6'); the honest product/conversion is now stated as two separate sentences
+    "1/3 x 1 = 2 in 6", // revision 7 finding 2: non-multiplication (1/3 x 1 is 1/3, not '2 in 6'); the honest product/conversion is now stated as two separate sentences
+    // --- New guardrail: faq.items[2].a ("What if the host doesn't actually
+    // know...") was re-transcribed this round. The old hand-wavy framing
+    // ("rounds get disproportionately deleted") must never reappear now
+    // that the copy states the mechanism exactly (see the targeted FAQ item
+    // 2 check in Beat 8 below for the positive assertion of the replacement
+    // sentence).
+    "disproportionately"
   ];
   for (const phrase of bannedPhrases) {
     if (finalBodyText.includes(phrase)) {

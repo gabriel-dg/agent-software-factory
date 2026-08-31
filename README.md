@@ -368,7 +368,18 @@ this domain on purpose.
   started on the car, a random host can never spoil the round; when the
   player started on a goat, he spoils it exactly half the time. Every
   spoiled round is a round switching would have won; none is a round it
-  would have lost. The fix states this as the actual mechanism.
+  would have lost.
+
+  This entry was wrong until the external review. It previously ended "the
+  fix states this as the actual mechanism," and the fix had been applied to
+  one string, `mechanismContrast.takeaway`, and not to the other,
+  `faq.items[2]`, which still read "disproportionately" on the shipped page.
+  So this README reported a completed fix that the live page contradicted,
+  for as long as the entry stood. The external review caught the surviving
+  instance; cross-checking the review against the repository confirmed it;
+  the FAQ string has since been corrected too. No verification layer found
+  it, and none could have: `check-claims.js` compares the attached assertion
+  to `sim.js` and never reads the sentence.
 - **A design fix that quietly removed a requirement.** When design-reviewer
   flagged that a door-eligibility badge misused a color family reserved for
   "you can click this," art-director's first proposed fix was to drop the

@@ -258,7 +258,7 @@
       },
       {
         "q": "What if the host doesn't actually know where the car is, and just happened to reveal a goat?",
-        "a": "The whole advantage disappears, exactly what the knowing-vs-random host comparison above showed. In the two cases where switching wins (you began on a goat), a host who doesn't know only dodges the car by a coin flip, not a certainty. Half those cases get spoiled outright and never get played. That disproportionately deletes 'switching would have won' rounds, dragging the survivors back to 50/50. The real host never makes that mistake.",
+        "a": "The whole advantage disappears, exactly what the knowing-vs-random host comparison above showed. When you started on the car (1/3 of rounds), both remaining doors are goats, so a host who doesn't know still can't reveal the car there: that round always survives, and it's a round where switching loses. When you started on a goat (2/3 of rounds), one remaining door is the car, and a host who doesn't know is equally likely to open either one: half the time he shows the goat and the round survives as a switching win, half the time he shows the car and the round is spoiled. Every spoiled round is one switching would have won; none of them is one switching would have lost. That's exactly what drags the survivors from 2/3 down to 50/50. The real host never makes that mistake.",
         "a_assert": { "doorCount": 3, "hostMode": "random", "metric": "noRevealAndSwitchWins", "expected": 0.5, "tolerance": 0.06 }
       },
       {
