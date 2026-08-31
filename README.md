@@ -166,6 +166,7 @@ flowchart TD
 
     UI["6. ui-engineer<br/>writes index.html, viz.js"]:::writer
     UI --> G3{"7. qa-walker in browser<br/>blocks a clean round"}:::gate
+    UI -->|"index.html or viz.js changed"| G3
     G3 -->|"FAIL, max 3 rounds"| UI
     G3 -->|PASS| SK2
     G3 -->|PASS| DR
@@ -180,6 +181,9 @@ flowchart TD
     DR -->|"9. design findings"| UI
     LD -->|"copy.json changed"| G4{"claim check<br/>math-verifier<br/>blocks a clean round"}:::gate
     G4 -->|FAIL| LD
+    G4 -->|PASS| DONE
+    G3 -->|PASS| DONE
+    DONE["round clean<br/>only when claim check<br/>and qa-walker both pass"]:::done
 
     G1 -.->|"rounds exhausted"| ESC["escalate to human"]:::human
     G2 -.->|"rounds exhausted"| ESC
@@ -190,6 +194,7 @@ flowchart TD
     classDef readonly fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-dasharray:4 3
     classDef gate fill:#fef3c7,stroke:#b45309,color:#3b2400
     classDef human fill:#fee2e2,stroke:#b91c1c,color:#5a0f0f
+    classDef done fill:#dcfce7,stroke:#15803d,color:#052e16
 ```
 
 Solid blue nodes write files and are the only agents that can. Dashed grey
