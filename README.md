@@ -464,6 +464,77 @@ specification is complete, and no layer in it can. The nine bugs listed under
 "What the pipeline actually found" are therefore the count of defects the
 pipeline found, not the count of defects that existed.
 
+## The external review
+
+An independent model was asked to review this repository adversarially: to
+check every probability statement against Bayes rather than against `sim.js`,
+run the verification scripts, drive the live page as a reader who believes the
+odds are 50/50, and test the experimental claims. It found substantive errors,
+including a wrong partition in the conditional argument at the center of the
+page and a verification layer that does not check what this README said it
+checked. It is published unedited at
+[docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md), including its overall
+verdict, which is that the approach is not worth its cost as implemented.
+
+Fixed since the review:
+
+- The knowing-host Route 3 row, which partitioned on the reader's pick rather
+  than the car's location, and the note in `SPEC.md` telling the reader not to
+  line the two route tables up.
+- "1/3 x 1 = 2 in 6", now stated as a product and a separate conversion.
+- Beat 1 announcing the 2/3 figure before the reader plays anything.
+- The 98 opened door numbers interpolated into the 100-door reveal.
+- This README's claim that every numeric claim is checked against a real
+  simulation, and its presentation of the 49% orchestrator figure as a
+  measurement.
+- `LESSONS.md`'s five-bug count against this README's nine, `TEAM.md`'s stale
+  opus entries, and `SPEC.md` section 4's `playRound` signature without
+  `hostMode`.
+- The missing design-reviewer to art-director route in `CLAUDE.md` step 9, and
+  the unstated rule for routing a qa-walker ledger mismatch.
+- The one-skeptic-round contradiction, resolved by stating in `CLAUDE.md` and
+  here that the limit is per phase and caps the pre-build review only.
+- FAQ item 3's "disproportionately", which the bug list above had reported as
+  fixed while the shipped page still carried it. It now states the exact
+  relationship, and that bug-list entry has been amended to record that it
+  misreported its own fix. This one was found by cross-checking the review
+  against the repository, not by any verification layer.
+
+Open, and not addressed by any of the above:
+
+- The four verification layers overlap rather than being independent, and
+  design-reviewer's ledger check duplicates qa-walker's by reading source
+  instead of computed style.
+- skeptic has Read access only, so it reviews source and never the rendered
+  page. The footer leak, the badge on the wrong doors, the 98-number dump and
+  the unlinked URL were all invisible to it for that reason.
+- `check-claims.js` still never parses the sentence it is attached to, and the
+  numeric strings carrying no assertion, including every joint probability in
+  both route tables, remain unchecked. The Verification section now says so;
+  the script is unchanged.
+- File ownership is a prompt instruction, not enforced by tooling. Agents with
+  Bash could edit any file, and exclusive write is declared in the owner's
+  prompt but not consistently in the other direction, which `LESSONS.md` calls
+  mandatory.
+- The nine-bug claim has no evidence in this repository: no skeptic reports,
+  no FAIL logs, no transcripts, no per-bug commits, with the whole pipeline in
+  one commit.
+- The bug count spans work the cost figure explicitly excludes, so the two
+  headline numbers describe different processes.
+- Two of the nine were not pipeline catches by this README's own account: a
+  human reading a proposed fix, and a manual grep from the orchestrator, which
+  `CLAUDE.md` forbids the main thread from doing.
+- No control run was performed, so the single-session counterfactual is
+  asserted throughout.
+- The sabotage test `LESSONS.md` recommends is not recorded anywhere here.
+- Reproducibility: no runner, no example prompts, no transcripts, no pinned
+  Node version, no rubric for the human approval gate. Porting to another
+  domain requires rewriting all eight prompts.
+- math-verifier's frontmatter says not to use it to judge code style while its
+  job includes a mechanical style pass.
+- Beat 3's length, the 500-round sample in the mechanism contrast, and the
+  closing beat reopening the biased-host objection.
+
 ## What it cost
 
 These numbers cover the first end-to-end run only, spec through the first
