@@ -1,56 +1,81 @@
-# Agent Software Factory
+# Eight agents, one page, four green checks, still wrong
 
-**TL;DR:** This is a report on running an eight-agent Claude Code pipeline,
-with separate roles, declared file ownership, and four scripted verification
-layers, end to end to find out how a multi-agent build actually behaves in
-practice, using a Monty Hall explainer as the test case. First full run:
-$31.81 API-equivalent, with only 51% of that usage attributed to named
-subagents and the other 49% not attributed to anything. The pipeline
-reported nine bugs. No control run was performed, so nothing here measures
-what a single session would have caught instead, and the repository holds no
-skeptic reports, FAIL logs or transcripts that evidence the nine
-independently. A human walkthrough afterwards, with all four layers
-reporting green, found four more defects. An independent model then audited
-the repository and concluded the approach is not worth its cost as
-implemented. That audit is published unedited in
-[docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md), and the findings it left
-standing are listed in the section introducing it. To look further: open
-`index.html` for the page, read `CLAUDE.md` and `.claude/agents/` for the
-pipeline, read `docs/LESSONS.md` for the generalized rules.
+This repository is a **field report**, not a framework. One run of an
+eight-agent Claude Code pipeline, with exclusive file ownership and four
+scripted verification layers, used to build a Monty Hall explainer as the
+test article.
 
-[Open the live demo](https://gabriel-dg.github.io/agent-software-factory/) to try the built explainer in your browser, nothing to install.
+**Question:** does a role-separated agent team catch things a single
+session does not, and at what cost?
 
-## The experiment
+**What we measured:** cost, the shape of the failures, and what a PASS
+from each layer actually means.
 
-The question: does a role-separated agent team with scripted verification
-catch things a single session does not, and what does that cost relative to
-one session doing the same work? Monty Hall was chosen as the test case
-because its answer is settled by simulation rather than opinion, so when two
-reviewers disagree, a script can decide it instead of an argument.
+**What we did not measure:** the single-session control. Nothing in this
+repo tells you whether eight agents beat one. An independent review of the
+repository concluded the approach, as implemented, is not worth its cost.
+That review is published unedited in
+[docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md).
 
-The answer is only half measured, and the half that is missing is the half
-the question turns on. The pipeline reported nine bugs and the cost is
-recorded below, but no control session was ever run, so the comparison was
-never made. Statements anywhere in this report about what a single session
-would or would not have caught are inferences, not findings. What is
-measured is the cost: several times what a single well-prompted session
-would plausibly have cost for a comparable page, and that is not a marginal
-overhead, it is the headline result.
+The explainer is at the
+[live demo](https://gabriel-dg.github.io/multi-agent-pipeline-study/).
+It exists so the process has something to be wrong about. It is not the
+deliverable.
 
-This repository contains the pipeline definition, [`CLAUDE.md`](CLAUDE.md)
-and the eight agent definitions in [`.claude/agents/`](.claude/agents/), and
-the Monty Hall explainer it produced. Where a claim about the odds carries
-a machine-readable assertion, that assertion is checked by code against a
-real simulation, and every color pair the page renders is checked against a
-computed WCAG contrast ratio rather than asserted in prose. The assertions
-themselves are the part a human still has to get right: the checker compares
-the simulation to the assertion, never to the sentence the reader sees.
+To look further: [`CLAUDE.md`](CLAUDE.md) and
+[`.claude/agents/`](.claude/agents/) for the pipeline,
+[`docs/LESSONS.md`](docs/LESSONS.md) for the generalized rules.
 
-To run it: visit the [live demo](https://gabriel-dg.github.io/agent-software-factory/), or clone the repo and open `index.html` in a browser. No build step, no server, no npm install required for the page itself.
+## What this run actually showed
+
+- **A PASS is not a working page.** All four verification layers reported
+  green. A human then opened the page and found four more defects, including
+  a footer that leaked the host-knowledge rule before the first click.
+- **The checks overlap, and one of them does not read the sentence it
+  claims to verify.** `check-claims.js` compares a sibling `_assert` object
+  to `sim.js`. A sentence can be edited into saying something else and the
+  check still passes. Coverage is partial: 17 probability-stating strings
+  carry no assertion at all.
+- **The adversary was cheap and load-bearing.** skeptic consumed 3% of
+  spend and produced the findings that rewrote the central argument,
+  including a false general law and a dropped case in a three-case
+  enumeration.
+- **Coordination, not the specialists, is where the money went.** First
+  full run: $31.81 API-equivalent. Named subagents account for 51% of
+  reported usage. The other 49% is unattributed; the numbers are consistent
+  with orchestrator context, and they do not split out the missing
+  sim-engineer share. That 49% is a hypothesis the data permit, not a
+  measurement of orchestrator overhead.
+- **File ownership was a prompt until a hook existed, and the hook still
+  cannot see a shell redirect.** math-verifier and qa-walker have Bash. A
+  bypass is a policy failure, not enforcement.
+- **The nine-bug list is later prose.** There are no skeptic reports, FAIL
+  logs, or transcripts in this repository. Two of the nine were not
+  pipeline catches on this README's own telling. The cost figure and the
+  bug list describe different stretches of work.
+
+## The specimen
+
+The Monty Hall page is the test article this pipeline was pointed at, not
+the product being launched. Vanilla HTML/CSS/JS, no build step: clone and
+open `index.html`, or use the
+[live demo](https://gabriel-dg.github.io/multi-agent-pipeline-study/).
 
 ![The three-door round: pick a door, the host opens one, then stay or switch.](docs/img/three-door-round.png)
 
 ![The 100-door escalation: 98 doors opened, one car, the switch strategy shown winning.](docs/img/hundred-door-round.png)
+
+## The experiment
+
+Monty Hall was chosen because its answer is settled by simulation rather
+than opinion, so when two reviewers disagree, a script can decide it
+instead of an argument. The pipeline definition is [`CLAUDE.md`](CLAUDE.md)
+and the eight agent files in [`.claude/agents/`](.claude/agents/). Where a
+claim about the odds carries a machine-readable assertion, that assertion
+is checked by code against a real simulation, and every color pair the
+page renders is checked against a computed WCAG contrast ratio rather than
+asserted in prose. The checker compares the simulation to the assertion,
+never to the sentence the reader sees.
 
 ## The team
 
