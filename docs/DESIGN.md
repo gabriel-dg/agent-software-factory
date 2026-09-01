@@ -290,12 +290,16 @@ this go stale independently of the tokens):
     grid's 1px hairline border on each side and subpixel rounding.
 
 `--content-max-width` is 46rem, which is narrower than 51rem, so the
-100-door beat (`#beat-round100`) must sit in the wide content column
-(`.wrap-wide` / `--content-max-width-wide` = 64rem), not the default
-`.wrap`. `--size-reveal-card` was sized to match the value already in
-use; `--max-width-door-grid-100` is sized from the formula above, not
-from a previously-used 40rem cap that never actually contained the
-10 columns.
+100-door beat (`#beat-round100`) keeps class `.wrap-wide` so the
+default `.wrap` / 46rem cap cannot shrink the doors; the used
+max-width is not `--content-max-width-wide` (64rem) but the grid
+token plus the section's inline padding
+(`calc(var(--max-width-door-grid-100) + 2 * var(--container-padding-inline))`
+= 51rem + 2 × 1.5rem = 54rem outer, 51rem inner, matching the grid
+cap so heading, intro, and panel share one column). `--size-reveal-card`
+was sized to match the value already in use; `--max-width-door-grid-100`
+is sized from the formula above, not from a previously-used 40rem cap
+that never actually contained the 10 columns.
 
 ui-engineer flagged three more literals while building Beat 3's 500-cell
 Host B round grid that had no fitting token anywhere in the existing

@@ -48,6 +48,13 @@
   }
   section.beat.wrap-wide { max-width: var(--content-max-width-wide); }
   section.beat:not(.wrap-wide) { max-width: var(--content-max-width); }
+  /* Beat 5: one inner column matching the 100-door panel. Border-box
+     section padding is --container-padding-inline on each side, so the
+     section cap is the grid token plus those two paddings (51rem + 3rem).
+     ID beats .wrap-wide's 64rem; do not fall back to .wrap (46rem). */
+  #beat-round100 {
+    max-width: calc(var(--max-width-door-grid-100) + 2 * var(--container-padding-inline));
+  }
   section.beat:nth-of-type(even) { background: var(--color-bg-surface-alt); }
   section.beat.locked, footer.site-footer.locked { display: none; }
 
@@ -162,7 +169,7 @@
     border-radius: var(--radius-lg);
   }
   .door-grid-3 { display: flex; gap: var(--grid-gap-doors-3); flex-wrap: wrap; justify-content: center; margin: var(--space-md) 0; padding: var(--space-md); }
-  .door-grid-100 { display: grid; grid-template-columns: repeat(10, 1fr); gap: var(--grid-gap-doors-100); margin: var(--space-md) 0; max-width: var(--max-width-door-grid-100); padding: var(--space-md); }
+  .door-grid-100 { display: grid; grid-template-columns: repeat(10, 1fr); gap: var(--grid-gap-doors-100); margin: var(--space-md) 0; width: 100%; max-width: var(--max-width-door-grid-100); padding: var(--space-md); }
   .door {
     width: var(--door-size-lg); height: var(--door-size-lg);
     border-radius: var(--radius-md);
