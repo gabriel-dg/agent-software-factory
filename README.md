@@ -65,7 +65,7 @@ the product. Vanilla HTML/CSS/JS: clone and open `index.html`, or use the
 Pedagogical spec in [`docs/SPEC.md`](docs/SPEC.md); strings in
 `copy.json`. A banner on the live page says the same thing.
 
-![The 100-door round: 98 goats opened, pick on door 1, car remaining on door 10.](docs/img/hundred-door-round.png)
+![The 100-door round: 98 goats opened, pick on door 1, car remaining on door 10.](docs/img/specimen-100-doors.png)
 
 ## Method
 
