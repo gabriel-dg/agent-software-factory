@@ -16,6 +16,10 @@ repository concluded the approach, as implemented, is not worth its cost.
 That review is published unedited in
 [docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md).
 
+The pipeline landed in one commit. There are no agent transcripts or
+per-bug FAIL logs in this repository. The bug list is later prose,
+written by the same process under study.
+
 If you are here to design a different pipeline, skip this file and start at
 [docs/LESSONS.md](docs/LESSONS.md). Wiring diagrams for *this* run:
 [docs/PIPELINE.md](docs/PIPELINE.md). This README is the report of the run.
