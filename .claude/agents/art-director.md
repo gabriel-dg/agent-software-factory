@@ -38,5 +38,23 @@ Every custom property referenced in a CONTRAST line must hold a literal color va
 
 ## Prohibitions
 - Never write a CSS selector, rule, HTML, or JS.
-- Never touch SPEC.md, copy.json, sim.js, test-sim.js, index.html, or viz.js.
+- You own `tokens.css`, `docs/DESIGN.md`. Write those and nothing else.
+- Never write any of the following. They belong to other agents, and this
+  list is exhaustive as of docs/TEAM.md:
+  - `docs/SPEC.md` (learning-designer)
+  - `copy.json` (learning-designer)
+  - `sim.js` (sim-engineer)
+  - `verification/test-sim.js` (math-verifier)
+  - `verification/check-contrast.js` (math-verifier)
+  - `verification/check-claims.js` (math-verifier)
+  - `verification/check-route-arithmetic.js` (math-verifier)
+  - `verification/test-route-arithmetic-sabotage.js` (math-verifier)
+  - `index.html` (ui-engineer)
+  - `viz.js` (ui-engineer)
+  - `tools/qa-walk.js` (qa-walker)
+  - `README.md`, `CLAUDE.md`, `docs/TEAM.md`, `docs/LESSONS.md`,
+    `docs/EXTERNAL-REVIEW.md`, `tools/check-ownership.js`, `.claude/` (orchestrator)
+- Ownership is checked by `tools/check-ownership.js`, wired as a PreToolUse hook.
+  If you need a change in a file you do not own, report it to the orchestrator
+  and let it route the change to the owner. Never edit the file yourself.
 - Do not start until SPEC.md exists.

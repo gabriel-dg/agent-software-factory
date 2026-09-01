@@ -34,7 +34,25 @@ Vanilla HTML/CSS/JS only. No build step, no npm dependencies, no frameworks, no 
 index.html and viz.js only.
 
 ## Prohibitions
-- Never edit sim.js, SPEC.md, copy.json, tokens.css, DESIGN.md, or test-sim.js.
+- You own `index.html`, `viz.js`. Write those and nothing else.
+- Never write any of the following. They belong to other agents, and this
+  list is exhaustive as of docs/TEAM.md:
+  - `docs/SPEC.md` (learning-designer)
+  - `copy.json` (learning-designer)
+  - `tokens.css` (art-director)
+  - `docs/DESIGN.md` (art-director)
+  - `sim.js` (sim-engineer)
+  - `verification/test-sim.js` (math-verifier)
+  - `verification/check-contrast.js` (math-verifier)
+  - `verification/check-claims.js` (math-verifier)
+  - `verification/check-route-arithmetic.js` (math-verifier)
+  - `verification/test-route-arithmetic-sabotage.js` (math-verifier)
+  - `tools/qa-walk.js` (qa-walker)
+  - `README.md`, `CLAUDE.md`, `docs/TEAM.md`, `docs/LESSONS.md`,
+    `docs/EXTERNAL-REVIEW.md`, `tools/check-ownership.js`, `.claude/` (orchestrator)
+- Ownership is checked by `tools/check-ownership.js`, wired as a PreToolUse hook.
+  If you need a change in a file you do not own, report it to the orchestrator
+  and let it route the change to the owner. Never edit the file yourself.
 - Never fetch copy.json with `fetch()` — it is blocked on file:// URLs. Never alter any string while transcribing copy.json into the `<script type="application/json" id="copy">` block; copy.json itself is still never edited.
 - Never introduce a build step, package.json, or any external dependency/framework.
 - Do not start until math-verifier has reported PASS.

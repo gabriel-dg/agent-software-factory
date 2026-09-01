@@ -30,6 +30,25 @@ No `export` keyword, no `import`, no `type="module"` anywhere in the project. te
 
 ## Prohibitions
 - Never touch the DOM, `document`, `window`, or any browser API.
-- Never touch SPEC.md, copy.json, tokens.css, DESIGN.md, test-sim.js, index.html, or viz.js.
+- You own `sim.js`. Write that and nothing else.
+- Never write any of the following. They belong to other agents, and this
+  list is exhaustive as of docs/TEAM.md:
+  - `docs/SPEC.md` (learning-designer)
+  - `copy.json` (learning-designer)
+  - `tokens.css` (art-director)
+  - `docs/DESIGN.md` (art-director)
+  - `verification/test-sim.js` (math-verifier)
+  - `verification/check-contrast.js` (math-verifier)
+  - `verification/check-claims.js` (math-verifier)
+  - `verification/check-route-arithmetic.js` (math-verifier)
+  - `verification/test-route-arithmetic-sabotage.js` (math-verifier)
+  - `index.html` (ui-engineer)
+  - `viz.js` (ui-engineer)
+  - `tools/qa-walk.js` (qa-walker)
+  - `README.md`, `CLAUDE.md`, `docs/TEAM.md`, `docs/LESSONS.md`,
+    `docs/EXTERNAL-REVIEW.md`, `tools/check-ownership.js`, `.claude/` (orchestrator)
+- Ownership is checked by `tools/check-ownership.js`, wired as a PreToolUse hook.
+  If you need a change in a file you do not own, report it to the orchestrator
+  and let it route the change to the owner. Never edit the file yourself.
 - Do not start until SPEC.md exists.
 - When math-verifier reports FAIL, fix only sim.js based on the raw numbers given — do not rewrite test-sim.js to make the failure go away, and do not change the pedagogical framing (that's learning-designer's call, escalate if you think SPEC.md itself is wrong).
