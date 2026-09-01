@@ -1957,7 +1957,7 @@ async function main() {
 
     await assertIncludes(page, "#site-footer", "The Monty Hall problem, played out rather than just explained.", "beat9", "footer.text");
     await assertIncludes(page, "#site-footer", "Every round on this page uses the same rule", "beat9", "footer.note (host-rule note)");
-    await assertIncludes(page, "#site-footer", "This page was written, built, and verified by a team of Claude Code agents", "beat9", "colophon.text (new colophon paragraph)");
+    await assertIncludes(page, "#site-footer", "Not every number on this page is machine-checked", "beat9", "colophon.text (new colophon paragraph)");
 
     await shot(page, "beat9-footer-unlocked.png");
     await checkNoPlaceholders(page, "beat9");
@@ -2006,7 +2006,12 @@ async function main() {
     // that the copy states the mechanism exactly (see the targeted FAQ item
     // 2 check in Beat 8 below for the positive assertion of the replacement
     // sentence).
-    "disproportionately"
+    "disproportionately",
+    // --- New guardrails for Revision 12's rewritten colophon (do not ban
+    // "every number" alone: the live copy honestly says "Not every number
+    // on this page is machine-checked"). ---
+    "Every number shown on the page is checked against a running simulation",
+    "agent-software-factory"
   ];
   for (const phrase of bannedPhrases) {
     if (finalBodyText.includes(phrase)) {

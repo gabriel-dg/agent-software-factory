@@ -1,6 +1,6 @@
 # SPEC.md — Monty Hall Interactive Explainer
 ### Pedagogical specification (learning-designer)
-### Revision 11: specimen-framing banner visible at t=0 (non-teaching)
+### Revision 12: colophon no longer overclaims machine-checking
 
 This document defines the sequence of beats a reader moves through, what each
 beat must accomplish psychologically/pedagogically, and what interaction each
@@ -362,12 +362,25 @@ value was touched. Full detail in §7.
 banner, visible at t=0 above the on-page title. This is not a teaching
 beat and must not assert 2/3 or any other odds figure. No beat was added,
 removed, or reordered. The on-page H1 (`meta.title`) stays "The Monty Hall
-Problem"; `meta.subtitle`, `meta.intro`, and `colophon` are unchanged. A
-new top-level copy key, `studyBanner`, carries the banner sentence, two
-external-link labels and URLs (report and external review), and the
-browser document/tab title. `#study-banner` is added to the Visible on
-load list as a top-level region, not nested inside `#meta-title`. See §7
+Problem"; `meta.subtitle`, `meta.intro`, and `colophon` were not changed
+in that round. A new top-level copy key, `studyBanner`, carries the banner
+sentence, two external-link labels and URLs (report and external review),
+and the browser document/tab title. `#study-banner` is added to the Visible
+on load list as a top-level region, not nested inside `#meta-title`. See §7
 for the itemized changelog.
+
+**Revision 12 (this one)** is a scoped rewrite of `colophon.text` only.
+No beat was added, removed, or reordered. `studyBanner`, `meta`, `footer`,
+and every teaching-beat string are unchanged. The previous colophon claimed
+that every number on the page is checked against a running simulation by an
+agent that did not write it, and pointed at the old repository URL
+(agent-software-factory). Both are false: not every number is
+machine-checked (the report says which are), and the repo is now
+https://github.com/gabriel-dg/multi-agent-pipeline-study. The new colophon
+states, in plain language, that this page is the test article of the
+pipeline study and that not every number is machine-checked. `#colophon-text`
+and `#site-footer` stay in "Not visible on load"; colophon is not added to
+Visible on load. See §7.
 
 ---
 
@@ -1237,13 +1250,44 @@ faq                     — Beat 8
 recap                   — Beat 9 (part 1)
 gutCheckFinal           — Beat 9 (part 2)
 footer                  — closing credits/disclaimer, not a teaching beat
-colophon                — credits/meta paragraph on how the page itself was
-                        produced, including the repository URL (auto-
-                        linkified by viz.js); renders into #colophon-text
+colophon                — specimen note: this page is the test article of
+                        the pipeline study; not every number is machine-
+                        checked (the report says which); report URL auto-
+                        linkified by viz.js; renders into #colophon-text
                         inside the footer; like footer, not a teaching beat
 ```
 
 ## 7. Revision log
+
+### Revision 12 (this round): colophon no longer overclaims that every number is machine-checked
+
+A scoped copy rewrite of `colophon.text` only, so the live page no longer
+contradicts the project's own report. No beat was added, removed, or
+reordered. `studyBanner`, `meta`, `footer`, and every teaching-beat string
+were not changed. No `_assert` was added or changed (the colophon contains
+no probability or win-rate number). `#colophon-text` / `#site-footer` stay
+in "Not visible on load"; colophon is not added to Visible on load.
+
+1. **`colophon.text` rewritten.** The previous string claimed that every
+   number shown on the page is checked against a running simulation by an
+   agent that did not write that number or its surrounding copy, and pointed
+   at the old agent-software-factory repository URL. Both claims are false:
+   not every number is machine-checked (the report says which are), and the
+   repository is now https://github.com/gabriel-dg/multi-agent-pipeline-study.
+   The new string states, in plain language, that this page is the test
+   article of an 8-agent pipeline study, that not every number on this page
+   is machine-checked, and that the report says which are. It contains
+   exactly one URL, the current report/repo URL, so viz.js's existing
+   auto-linkify (first URL only) still works. Single `text` field kept; no
+   structured link fields added.
+2. **§6's `colophon` key-map line** no longer describes a credits/meta
+   paragraph on how the page itself was produced. It now describes the
+   specimen note (test article of the pipeline study; not every number is
+   machine-checked; report URL auto-linkified). Format unchanged: column-0
+   key, whitespace, em dash, whitespace, description. No capitalized
+   "Beat <digits>" in that description.
+
+Header line and top-of-document summary block updated to Revision 12.
 
 ### Revision 11 (this round): specimen-framing banner visible at t=0, plus new `studyBanner` copy key
 

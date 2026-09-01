@@ -346,6 +346,6 @@
   },
 
   "colophon": {
-    "text": "This page was written, built, and verified by a team of Claude Code agents, each with a separate role. Every number shown on the page is checked against a running simulation by an agent that did not write that number or its surrounding copy. The pipeline that built it is at https://github.com/gabriel-dg/agent-software-factory."
+    "text": "Built as the test article of an 8-agent pipeline study. Not every number on this page is machine-checked; the report says which are. The pipeline is at https://github.com/gabriel-dg/multi-agent-pipeline-study"
   }
 }
