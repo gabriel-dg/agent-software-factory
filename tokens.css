@@ -423,7 +423,7 @@
   --grid-gap-doors-100: var(--space-3xs);
   --grid-gap-doors-3: var(--space-lg);
   --size-reveal-card: 6.5rem;          /* prize/goat reveal card width & height */
-  --max-width-door-grid-100: 40rem;    /* cap on the 100-door grid's width */
+  --max-width-door-grid-100: 51rem;    /* 10×4.5rem doors + 9×0.25rem gaps + 2×1.5rem padding = 50.25rem, rounded up */
 
   /* Beat 3's 500-cell Host B round grid (.round-grid / .round-cell /
      .round-grid-legend .swatch). Component-specific dimension tokens,

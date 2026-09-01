@@ -274,10 +274,28 @@ repeated batch-trial interactions of Beats 4 and 6.
 
 Two dimension tokens sit alongside `--door-size-lg`/`--door-size-sm`:
 `--size-reveal-card` (6.5rem) fixes the width/height of the prize/goat
-reveal badges, and `--max-width-door-grid-100` (40rem) caps the width of
+reveal badges, and `--max-width-door-grid-100` (51rem) caps the width of
 the 100-door grid so its 10-column layout doesn't stretch edge-to-edge on
-wide viewports. Both were sized to match the values already in use so
-introducing them doesn't shift any existing layout.
+wide viewports. The cap is the size of that 10-column layout, not a
+smaller number: `.door-grid-100` is `box-sizing: border-box` with
+`--space-md` padding on all sides, so the max-width must contain the
+doors, the gaps, *and* the padding, or the last columns overflow the
+white panel onto the beat's beige background. Arithmetic (do not let
+this go stale independently of the tokens):
+
+    10 × `--door-size-sm` (4.5rem)                              = 45rem
+  +  9 × `--grid-gap-doors-100` (`--space-3xs` = 0.25rem)       =  2.25rem
+  +  2 × `--space-md` (1.5rem)                                  =  3rem
+  = 50.25rem exact. Token is 51rem — 0.75rem of slack for the
+    grid's 1px hairline border on each side and subpixel rounding.
+
+`--content-max-width` is 46rem, which is narrower than 51rem, so the
+100-door beat (`#beat-round100`) must sit in the wide content column
+(`.wrap-wide` / `--content-max-width-wide` = 64rem), not the default
+`.wrap`. `--size-reveal-card` was sized to match the value already in
+use; `--max-width-door-grid-100` is sized from the formula above, not
+from a previously-used 40rem cap that never actually contained the
+10 columns.
 
 ui-engineer flagged three more literals while building Beat 3's 500-cell
 Host B round grid that had no fitting token anywhere in the existing
