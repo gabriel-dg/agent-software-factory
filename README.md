@@ -499,9 +499,22 @@ asking for the underlying paths, never by accepting the agent's summary.
   expected table to match a bug in its own comparison, a change that would
   have made the check unable to tell 2/6 from 1/3 on the one line whose
   purpose is that distinction.
+- `check-route-arithmetic.js` passed for two commits while failing to catch
+  the defect it was written for. Its table matched by set membership, so a
+  product stated as 2/6 satisfied the entry intended for the conversion, and
+  the collapsed form the script exists to reject went through. It surfaced
+  only after the three sabotage cases the verifying agent had silently
+  dropped from its own suite were added back, and the commit message claiming
+  the hole was closed was wrong when it was written.
+- The same agent left two deliberately corrupted copies of `copy.json` in
+  `verification/temp-fixed-check/`, inside the repository, rather than in the
+  temp directory it had been told to use. Committing them would have added two
+  files closely resembling the project's source of truth, carrying broken
+  arithmetic, to version control. They were caught by inspection before
+  staging, by no check.
 
-In this run, a verifying agent's own report of its work was wrong three
-times, and each time it was caught by inspecting the artifact rather than the
+In this run, a verifying agent's own report of its work was wrong five times,
+and each time it was caught by inspecting the artifact rather than the
 report.
 
 ## The external review

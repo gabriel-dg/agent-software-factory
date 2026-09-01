@@ -1,10 +1,11 @@
 // Sabotage suite: test that check-route-arithmetic.js catches 10 mutations
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execSync } = require('child_process');
 
 const originalCopyJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'copy.json'), 'utf8'));
-const tempDir = path.join(__dirname, '.', 'sabotage-temp');
+const tempDir = path.join(os.tmpdir(), 'monty-hall-sabotage');
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
 const mutations = [
@@ -96,11 +97,11 @@ const mutations = [
     }
   },
   {
-    name: 'l: Collapse routes[1] product to "1/3 x 1 = 2/6" (value-consistent, form-wrong)',
+    name: 'l: Collapse routes[1] product to "1/3 x 1 = 2 in 6" (value-consistent, form-wrong)',
     apply: (copy) => {
       const detail = copy.mechanismContrast.threeCases.whyYourDoorDoesntMove.knowingHost.routes[1].detail;
       copy.mechanismContrast.threeCases.whyYourDoorDoesntMove.knowingHost.routes[1].detail =
-        detail.replace('1/3 x 1 = 1/3', '1/3 x 1 = 2/6');
+        detail.replace('1/3 x 1 = 1/3', '1/3 x 1 = 2 in 6');
     }
   },
   {
