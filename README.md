@@ -17,14 +17,14 @@ repository concluded the approach, as implemented, is not worth its cost.
 That review is published unedited in
 [docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md).
 
+If you are here to design a different pipeline, skip this file and start at
+[docs/LESSONS.md](docs/LESSONS.md). This README is the report of *this*
+run.
+
 The explainer is at the
 [live demo](https://gabriel-dg.github.io/multi-agent-pipeline-study/).
 It exists so the process has something to be wrong about. It is not the
 deliverable.
-
-To look further: [`CLAUDE.md`](CLAUDE.md) and
-[`.claude/agents/`](.claude/agents/) for the pipeline,
-[`docs/LESSONS.md`](docs/LESSONS.md) for the generalized rules.
 
 ## What this run actually showed
 
@@ -57,640 +57,146 @@ To look further: [`CLAUDE.md`](CLAUDE.md) and
 ## The specimen
 
 The Monty Hall page is the test article this pipeline was pointed at, not
-the product being launched. Vanilla HTML/CSS/JS, no build step: clone and
-open `index.html`, or use the
+the product. Vanilla HTML/CSS/JS: clone and open `index.html`, or use the
 [live demo](https://gabriel-dg.github.io/multi-agent-pipeline-study/).
-
-![The three-door round: pick a door, the host opens one, then stay or switch.](docs/img/three-door-round.png)
+Pedagogical spec in [`docs/SPEC.md`](docs/SPEC.md); strings in
+`copy.json`. A banner on the live page says the same thing.
 
 ![The 100-door escalation: 98 doors opened, one car, the switch strategy shown winning.](docs/img/hundred-door-round.png)
 
-## The experiment
+## Method
 
-Monty Hall was chosen because its answer is settled by simulation rather
-than opinion, so when two reviewers disagree, a script can decide it
-instead of an argument. The pipeline definition is [`CLAUDE.md`](CLAUDE.md)
-and the eight agent files in [`.claude/agents/`](.claude/agents/). Where a
-claim about the odds carries a machine-readable assertion, that assertion
-is checked by code against a real simulation, and every color pair the
-page renders is checked against a computed WCAG contrast ratio rather than
-asserted in prose. The checker compares the simulation to the assertion,
-never to the sentence the reader sees.
+Eight agents, exclusive write access, no agent-to-agent channel. The
+orchestrator routes every arrow. Writers run sequentially except where
+files are disjoint; reviewers run in parallel. Author and verifier are
+always separate. Roster and ownership:
+[`docs/TEAM.md`](docs/TEAM.md). Sequence, gates, and round limits:
+[`CLAUDE.md`](CLAUDE.md). Agent files:
+[`.claude/agents/`](.claude/agents/).
 
-## The team
+Monty Hall was the test case because its answer is settled by simulation,
+so a disagreement can be decided by a script instead of an argument.
 
-Eight agents, each with exclusive write access to a fixed set of files and a
-narrow job description. No agent edits a file it doesn't own; an agent that
-needs a file changed reports the problem and the orchestrator routes it to
-whichever agent does own that file.
+| agent | model | owns |
+|---|---|---|
+| [learning-designer](.claude/agents/learning-designer.md) | sonnet | `docs/SPEC.md`, `copy.json` |
+| [art-director](.claude/agents/art-director.md) | sonnet | `tokens.css`, `docs/DESIGN.md` |
+| [sim-engineer](.claude/agents/sim-engineer.md) | sonnet | `sim.js` |
+| [math-verifier](.claude/agents/math-verifier.md) | haiku | `verification/*` |
+| [ui-engineer](.claude/agents/ui-engineer.md) | sonnet | `index.html`, `viz.js` |
+| [qa-walker](.claude/agents/qa-walker.md) | sonnet | `tools/qa-walk.js` |
+| [skeptic](.claude/agents/skeptic.md) | opus | nothing (read-only) |
+| [design-reviewer](.claude/agents/design-reviewer.md) | sonnet | nothing (read-only) |
 
-```mermaid
-%%{init: {"flowchart": {"rankSpacing": 220, "nodeSpacing": 28, "curve": "basis"}}}%%
-flowchart LR
-    LD["learning-designer"]:::writer
-    AD["art-director"]:::writer
-    SE["sim-engineer"]:::writer
-    UI["ui-engineer"]:::writer
-    MV["math-verifier"]:::writer
-    QA["qa-walker"]:::writer
-    SK["skeptic"]:::readonly
-    DR["design-reviewer"]:::readonly
+## What the four checks actually check
 
-    SPEC["docs/SPEC.md"]:::file
-    COPY["copy.json"]:::file
-    TOK["tokens.css"]:::file
-    DES["docs/DESIGN.md"]:::file
-    SIM["sim.js"]:::file
-    IDX["index.html"]:::file
-    VIZ["viz.js"]:::file
-    VER["verification/<br/>test-sim.js<br/>check-contrast.js<br/>check-claims.js"]:::file
-    QAW["tools/qa-walk.js"]:::file
+They are complementary, not independent. The external review was right
+about that. Commands run from the repo root.
 
-    LD ==> SPEC
-    LD ==> COPY
-    AD ==> TOK
-    AD ==> DES
-    SE ==> SIM
-    UI ==> IDX
-    UI ==> VIZ
-    MV ==> VER
-    QA ==> QAW
+| check | command | what a PASS means | what it does not mean |
+|---|---|---|---|
+| Simulation | `node verification/test-sim.js` | empirical rates match closed form (3 doors: 1/3 vs 2/3; N doors: 1/N vs (N-1)/N; random host: ~1/3 spoil, else 50/50) | the page's *sentences* are true |
+| Contrast | `node verification/check-contrast.js` | every pair *declared* in `DESIGN.md` meets WCAG and matches the claimed ratio | the page only renders declared pairs |
+| Claims | `node verification/check-claims.js` | each `_assert` object matches `sim.js` within tolerance; no em dashes | the sentence next to the `_assert` says that number. 36 strings state a probability; 19 carry an assertion. The 17 gaps include every joint in both route tables. |
+| Browser | `cd tools && npm install && node qa-walk.js` | the page loads, beats unlock in spec order, no leftover `{{placeholders}}`, rendered color pairs are in the ledger | the spec is complete. An ungated footer had no spec entry, so this check had nothing to fail. |
 
-    AD -.-> SPEC
-    SE -.-> SPEC
-    SE -. "test-sim.js only" .-> VER
-    UI -.-> SPEC
-    UI -.-> COPY
-    UI -.-> TOK
-    UI -.-> SIM
-    MV -.-> SIM
-    MV -.-> TOK
-    MV -.-> DES
-    MV -.-> COPY
-    QA -.-> SPEC
-    QA -.-> COPY
-    QA -.-> IDX
-    QA -.-> VIZ
-    QA -.-> DES
-    QA -.-> TOK
-    SK -.-> SPEC
-    SK -.-> COPY
-    DR -.-> IDX
-    DR -.-> VIZ
-    DR -.-> DES
-    DR -.-> TOK
+`check-claims.js` never parses the number in the sentence. A string can be
+edited into saying something else and still PASS, as long as the sibling
+`_assert` is untouched. `round100.mechanismCallout` tells the reader "1
+time in 50"; its assertion is `prizeRevealed` expected 0.98, the
+complement. Both are correct. A human has to know that.
 
-    linkStyle 9 stroke:#b45309,stroke-width:1.8px
-    linkStyle 10,11 stroke:#0d9488,stroke-width:1.8px
-    linkStyle 12,13,14,15 stroke:#8b5cf6,stroke-width:1.8px
-    linkStyle 16,17,18,19 stroke:#e11d48,stroke-width:1.8px
-    linkStyle 20,21,22,23,24,25 stroke:#3b82f6,stroke-width:1.8px
-    linkStyle 26,27 stroke:#65a30d,stroke-width:1.8px
-    linkStyle 28,29,30,31 stroke:#16a34a,stroke-width:1.8px
+## What the pipeline found
 
-    classDef writer fill:#dbeafe,stroke:#1d4ed8,color:#0b2e6b
-    classDef readonly fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-dasharray:4 3
-    classDef file fill:#ffffff,stroke:#374151,color:#111827
-```
+Count: one bug per defect in the shipped page or its spec that somebody
+had to go back and fix. Nine below are what the pipeline's own agents and
+checks surfaced; four in the next section are what it did not. There are
+no transcripts, FAIL logs, or per-bug commits; the whole pipeline landed
+in one commit. Two of the nine were not pipeline catches on this report's
+own telling.
 
-Thick solid arrows are exclusive write access. Exactly one agent points at
-each file, and no other agent may change it. Dotted arrows are reads, colored
-by the agent they leave so they can be followed across the crossings. skeptic
-and design-reviewer have no write arrow at all, which is the whole point of
-them; math-verifier and qa-walker write only their own harness files and read,
-never write, every file they check. learning-designer is the only agent with
-no read arrow: it starts the pipeline, and its definition lets it read
-anything for context without naming a specific input.
-
-| agent | model | tools | owns (exclusive write) | role |
-|---|---|---|---|---|
-| [learning-designer](.claude/agents/learning-designer.md) | sonnet | Read, Write, Edit | `docs/SPEC.md`, `copy.json` | Writes the pedagogical spec and every user-facing string. Decides what the page must teach and prove, not how it's built. |
-| [art-director](.claude/agents/art-director.md) | sonnet | Read, Write, Edit | `tokens.css`, `docs/DESIGN.md` | Defines the visual design system as CSS custom properties only, and documents every text/background contrast pair with a claimed ratio. |
-| [sim-engineer](.claude/agents/sim-engineer.md) | sonnet | Read, Write, Edit | `sim.js` | Writes the pure simulation logic (no DOM) that the page's claims are checked against. |
-| [math-verifier](.claude/agents/math-verifier.md) | haiku | Read, Write, Bash | `verification/test-sim.js`, `verification/check-contrast.js`, `verification/check-claims.js` | Runs three scripted numeric checks and reports PASS/FAIL with raw numbers only. Never comments on style, wording, or code quality. |
-| [ui-engineer](.claude/agents/ui-engineer.md) | sonnet | Read, Write, Edit | `index.html`, `viz.js` | Builds the actual page and interactions from the spec, copy, tokens, and sim.js's exported functions. |
-| [qa-walker](.claude/agents/qa-walker.md) | sonnet | Read, Write, Bash | `tools/qa-walk.js` | Drives the built page in a real Chromium browser via Playwright and checks it against the spec's beat sequence. Read-only on the explainer itself. |
-| [skeptic](.claude/agents/skeptic.md) | opus | Read | nothing | Role-plays a reader convinced the odds are 50/50 and reports the exact sentence where the argument loses them. Read-only; suggests no code. |
-| [design-reviewer](.claude/agents/design-reviewer.md) | sonnet | Read | nothing | Reviews the built page against `DESIGN.md` and `tokens.css` for implementation fidelity. Read-only; does not judge the argument or the copy. |
-
-## The pipeline
-
-```mermaid
-flowchart TD
-    ORCH["orchestrator<br/>routes every arrow below<br/>no agent calls another agent"]:::orch
-    ORCH --> LD
-
-    LD["1. learning-designer<br/>writes SPEC.md, copy.json"]:::writer
-    LD --> HUMAN1["human approval<br/>pipeline stops here"]:::human
-    HUMAN1 --> SK1["2. skeptic<br/>reads spec and copy"]:::readonly
-    SK1 -->|"findings, max 1 round<br/>pre-build review only"| LD
-    SK1 --> SE
-    SK1 --> AD
-
-    subgraph STEP3["3. parallel, disjoint files"]
-      direction LR
-      SE["sim-engineer<br/>writes sim.js"]:::writer
-      AD["art-director<br/>writes tokens.css, DESIGN.md"]:::writer
-    end
-
-    SE --> G1{"4. simulation check<br/>math-verifier<br/>blocks ui-engineer"}:::gate
-    AD --> G2{"5. contrast check<br/>math-verifier<br/>blocks ui-engineer"}:::gate
-    G1 -->|"FAIL, max 3 rounds"| SE
-    G2 -->|"FAIL, max 3 rounds"| AD
-    G1 -->|PASS| UI
-    G2 -->|PASS| UI
-
-    UI["6. ui-engineer<br/>writes index.html, viz.js"]:::writer
-    UI --> G3{"7. qa-walker in browser<br/>blocks a clean round"}:::gate
-    UI -->|"index.html or viz.js changed"| G3
-    G3 -->|"FAIL, max 3 rounds"| UI
-    G3 -->|PASS| SK2
-    G3 -->|PASS| DR
-
-    subgraph STEP8["8. parallel review, read only"]
-      direction LR
-      SK2["skeptic<br/>judges the argument"]:::readonly
-      DR["design-reviewer<br/>judges design fidelity"]:::readonly
-    end
-
-    SK2 -->|"9. copy findings"| LD
-    DR -->|"9. design findings"| UI
-    LD -->|"copy.json changed"| G4{"claim check<br/>math-verifier<br/>blocks a clean round"}:::gate
-    G4 -->|FAIL| LD
-    G4 -->|PASS| DONE
-    G3 -->|PASS| DONE
-    DONE["round clean<br/>only when claim check<br/>and qa-walker both pass"]:::done
-
-    G1 -.->|"rounds exhausted"| ESC["escalate to human"]:::human
-    G2 -.->|"rounds exhausted"| ESC
-    G3 -.->|"rounds exhausted"| ESC
-
-    classDef orch fill:#ede9fe,stroke:#6d28d9,color:#2e1065
-    classDef writer fill:#dbeafe,stroke:#1d4ed8,color:#0b2e6b
-    classDef readonly fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-dasharray:4 3
-    classDef gate fill:#fef3c7,stroke:#b45309,color:#3b2400
-    classDef human fill:#fee2e2,stroke:#b91c1c,color:#5a0f0f
-    classDef done fill:#dcfce7,stroke:#15803d,color:#052e16
-```
-
-Solid blue nodes write files and are the only agents that can. Dashed grey
-nodes are read-only and produce findings, never edits. Yellow diamonds are the
-four verification gates, run by math-verifier and qa-walker, neither of which
-may edit the files it checks. Red is where the pipeline hands control back to
-a human. Every arrow is the orchestrator making a routing decision; the agents
-have no channel to each other.
-
-The full sequence, from `CLAUDE.md`:
-
-1. learning-designer produces `SPEC.md` and `copy.json`. **Stops for human
-   review before anything else runs.**
-2. skeptic reviews `SPEC.md` and `copy.json` alone, before anything gets
-   built. Findings route back to learning-designer. Max one revision round,
-   then the pipeline continues regardless. That limit is per phase, not per
-   project: it caps this pre-build review only and does not cap the
-   post-build review rounds in step 8. skeptic ran four times in the
-   reference run, once here and three times over the built page, which is
-   why `docs/SPEC.md` records four skeptic passes.
-3. art-director and sim-engineer run in parallel (they own disjoint files,
-   so there's nothing to merge).
-4. math-verifier runs the simulation check. On FAIL, back to sim-engineer.
-   Max three rounds, then escalate to the human.
-5. math-verifier runs the contrast check on `tokens.css` and `DESIGN.md`. On
-   FAIL, back to art-director. Max three rounds, then escalate.
-6. ui-engineer builds `index.html` and `viz.js`, but only after both the
-   simulation check and the contrast check pass.
-7. qa-walker drives the built page in a real browser. On FAIL, back to
-   ui-engineer. Max three rounds, then escalate.
-8. skeptic and design-reviewer run in parallel over the finished page.
-9. skeptic's findings route to learning-designer. design-reviewer's findings
-   route by the file the fix lands in: markup and wiring to ui-engineer,
-   token values and anything in `DESIGN.md` to art-director. A qa-walker
-   ledger mismatch routes by cause: a pair the design never intended is
-   ui-engineer's, a pair the design intends but `DESIGN.md` never declared is
-   art-director's.
-10. Any change to `sim.js` re-triggers the simulation check. Any change to
-    `tokens.css` or `DESIGN.md` re-triggers the contrast check. Any change
-    to `copy.json` re-triggers the claim check. Any change to `index.html`
-    or `viz.js` re-triggers qa-walker. A skeptic/design-reviewer round is
-    not considered clean until the claim check and qa-walker both pass
-    again.
-
-Writers run sequentially except where the pipeline explicitly parallelizes
-them (step 3, step 8). Reviewers always run in parallel with each other.
-Nothing gets implemented, fixed, or rewritten in the orchestrator's own
-context; everything is delegated to the agent that owns the relevant file,
-or escalated to the human when a round limit is hit.
-
-## Verification
-
-Four layers check different things, and no one of them substitutes for
-another. They are not independent of each other, and the external review was
-right about that: design-reviewer's ledger check duplicates qa-walker's by
-reading source instead of computed style, and the two contrast checks are
-complementary halves of one question rather than two views of it, since
-`check-contrast.js` asks only whether declared pairs meet WCAG while
-qa-walker asks only whether rendered pairs were declared. All commands run
-from the repo root.
-
-**1. Simulation correctness against analytic ground truth.**
-```
-node verification/test-sim.js
-```
-Runs `sim.js`'s `playRound`/`runTrials` over tens of thousands of trials and
-compares the empirical win rate to the known closed-form answer (3 doors:
-1/3 vs 2/3; N doors with N-2 revealed: 1/N vs (N-1)/N; random host: about
-1/3 of rounds end in the prize being revealed, and among the rest, staying
-and switching are 50/50). This catches a wrong simulation, something that
-runs without error and produces plausible-looking numbers, but implements
-the host's constraint incorrectly.
-
-**2. Computed contrast ratios against the design ledger.**
-```
-node verification/check-contrast.js
-```
-Parses the literal colors in `tokens.css` and the declared pairs in
-`docs/DESIGN.md`'s `## Contrast pairs` section, computes the real WCAG 2.1
-relative-luminance ratio for each pair, and checks it against both the
-required threshold and the ratio `DESIGN.md` claims. This catches a color
-pair that was eyeballed as "looks fine" but fails AA, or a documented ratio
-that's gone stale after a token value changed.
-
-**3. Declared assertions in the copy against the simulation.**
-```
-node verification/check-claims.js
-```
-A string in `copy.json` that states a number may carry a sibling `_assert`
-object naming `doorCount`, `hostMode`, `metric`, `expected` and
-`tolerance`. This script runs the simulation with a fixed seed and checks
-that the simulation's output for that metric lands within `tolerance` of
-`expected`. It also runs a mechanical style pass over every string for em
-dashes, en dashes standing in for em dashes, and malformed or unrecognized
-`{{placeholder}}` tokens.
-
-Be precise about what that does and does not establish, because it is easy
-to read as more than it is. The script never parses the number written in
-the sentence. It compares the simulation to the assertion, and the only
-thing connecting the assertion to the sentence beside it is the intent of
-whoever wrote both. A sentence can be edited into saying something else
-entirely and the check still passes, as long as the `_assert` object is
-untouched. The relationship is not even always equality:
-`round100.mechanismCallout` tells the reader blind luck pulls this off
-"only about 1 time in 50, roughly 2%" and its assertion is `prizeRevealed`
-with `expected` 0.98, the complement. Both are correct, and a human has to
-know that to know they are.
-
-Coverage is partial, and since commit `6c916c3` the script measures and
-prints the gap on every run rather than leaving it unmeasured. Counting
-strings that contain a fraction, an "N in N" or "N of N" phrase, or a
-percentage, it reports that 36 strings in `copy.json` state a probability and
-19 of them carry an assertion. The 17 that do not include all six route rows and both worked
-divisions in the two `whyYourDoorDoesntMove` tables, which is to say every
-joint probability and the entire renormalization, the most mathematically
-load-bearing arithmetic on the page. None of it is checked by anything but
-a human reading it. So this layer catches a stated `expected` drifting away
-from what the simulation produces; it does not catch a wrong number in the
-copy, and it cannot tell anyone that a claim was never annotated in the
-first place.
-
-**4. Real-browser behavior via Playwright.**
-```
-cd tools && npm install
-node qa-walk.js
-```
-(or `node tools/qa-walk.js` from the repo root, after `npm install` inside
-`tools/`.) Drives the actual page end to end in a visible Chromium window:
-loads it, plays through every beat, and checks for things no source review
-can see, `sim.js` failing to load, the embedded copy JSON failing to parse,
-an unsubstituted `{{placeholder}}` literally rendering to the reader,
-content leaking before its triggering interaction. It then walks every
-element in the rendered DOM, resolves its actual computed foreground and
-background color, and checks that pair against `DESIGN.md`'s ledger. This
-is the only layer that can catch a rendered color pair nobody ever declared
-or verified, since check-contrast.js only ever checks pairs `DESIGN.md`
-claims exist. It caught exactly that bug twice in this project (below).
-
-## What the pipeline actually found
-
-These are bugs an earlier pipeline stage, or a human skimming the same
-text, plausibly would not have caught, because each one reads as correct on
-a casual pass and only breaks under a specific kind of scrutiny.
-
-These are the evidence for the answer given above, and they are specific to
-this domain on purpose. The count is one bug per defect in the shipped page
-or its spec that somebody had to go back and fix. The nine below are the ones
-the pipeline's own agents and checks surfaced; the four in the next section
-are the ones it did not. `docs/LESSONS.md` uses the same count and the same
-definition.
-
-- **A false general law stated as if it were a proof.** An early draft
-  explained why the host's reveal doesn't update your own door's odds with
-  "an event that was going to happen either way can't be evidence about
-  which way it actually is." That sentence sounds right and is false: a
-  host who, when he has a free choice between two goat doors, always favors
-  the lower-numbered one, is still "certain either way" to reveal a goat,
-  and yet which door he opens now leaks real information. skeptic's second
-  pass found this specific counterexample; the fix replaced the false
-  general law with the narrower, correct one (the host breaks ties
-  uniformly at random) and stated that assumption explicitly everywhere the
-  argument depends on it.
-- **A silently dropped case in a three-case enumeration.** The argument
-  compared what happens if you started on the car versus the other goat,
-  and never mentioned the third starting case at all, "you had the goat
-  behind the door that actually got opened." Omitting it reads exactly like
-  the dropped-case trick the page exists to disprove. skeptic's third pass
-  caught it; the fix adds the third route back explicitly, with its
-  zero-probability reasoning stated as a direct consequence of the rule,
-  not just asserted away.
-- **Unrenormalized probabilities that summed to 1/2, not 1**, in the same
-  three-case argument, with no stated justification for why only two routes
-  were "live" or why dividing by their sum rather than by 1 was correct.
-  Fixed by adding the actual joint-probability arithmetic instead of
-  presenting the ratio as self-evident.
-- **A claim asserted without demonstration.** The page stated that a
-  knowing host and a random host can produce identical visible evidence
-  while implying different answers, without ever showing it. The fix added
-  a second, parallel probability table for the random host so the
-  divergence is a worked calculation, not an assertion.
-- **A wrong direction on a claim about the simulation.** A later draft
-  described spoiled rounds (where a random host accidentally reveals the
-  prize) as "disproportionately" the rounds switching would have won,
-  hand-waving past the actual mechanism. Checking directly against `sim.js`
-  showed the real relationship is exact, not approximate: when the player
-  started on the car, a random host can never spoil the round; when the
-  player started on a goat, he spoils it exactly half the time. Every
-  spoiled round is a round switching would have won; none is a round it
-  would have lost.
-
-  This entry was wrong until the external review. It previously ended "the
-  fix states this as the actual mechanism," and the fix had been applied to
-  one string, `mechanismContrast.takeaway`, and not to the other,
-  `faq.items[2]`, which still read "disproportionately" on the shipped page.
-  So this README reported a completed fix that the live page contradicted,
-  for as long as the entry stood. The external review caught the surviving
-  instance; cross-checking the review against the repository confirmed it;
-  the FAQ string has since been corrected too. No verification layer found
-  it, and none could have: `check-claims.js` compares the attached assertion
-  to `sim.js` and never reads the sentence.
-- **A design fix that quietly removed a requirement.** When design-reviewer
-  flagged that a door-eligibility badge misused a color family reserved for
-  "you can click this," art-director's first proposed fix was to drop the
-  badge and replace it with generic disabled-button styling. That styling
-  communicates "not clickable," not the actual game-logic fact the badge
-  existed to convey (this door was structurally forbidden to the host).
-  Nothing downstream would have caught this on its own, since the page
-  would still run, still pass every numeric and contrast check, and look
-  reasonable; catching it required a human reading the proposed fix against
-  what it was supposed to preserve, and sending it back.
-- **A visual state that collided with an existing one.** design-reviewer
-  found that the same lock icon and the same violet color family used
-  page-wide to mean "you can click this" had been reused for a door that
-  was explicitly not clickable, and separately found a "played vs. spoiled"
-  round pair distinguished only by two very similar shades of pale orange,
-  which breaks the page's own rule that no state pair is color-only. Both
-  needed a real design decision (new token families, shape and border
-  differences), not a code patch.
-- **An undeclared color pair that only existed at render time.**
-  check-contrast.js only checks pairs `DESIGN.md` claims exist; it has no
-  way to know what the actual page renders. Twice in this project,
-  qa-walker's browser-level check found a text/background pair on the live
-  page that had never been declared or verified, once from an inherited
-  background nobody traced through the cascade, once from a legend label
-  that picked up its container's background instead of its own. Neither
-  check-contrast.js nor a source-code read would have caught either, since
-  both require resolving inherited styles the way a browser actually does.
-- **A style rule that the responsible agent got wrong about its own work.**
-  A compression pass was explicitly required to leave zero em dashes in
-  `copy.json`, and the agent that did the pass reported back that it had.
-  It had not; ten remained, found only by a manual grep from the
-  orchestrator, not by any automated check. This is why the style pass
-  described in the verification section above exists now, specifically
-  because the pipeline had a real gap here and closing it meant adding a
-  fourth kind of check, not just re-trusting the same self-report.
+1. **False general law as proof.** "An event that was going to happen
+   either way can't be evidence." False: a host who always opens the
+   lower-numbered goat still always reveals a goat, and which door leaks
+   information. skeptic, second pass.
+2. **Dropped case in a three-case enumeration.** The third starting case
+   was omitted, which reads like the counting trick the page exists to
+   disprove. skeptic, third pass.
+3. **Joints that summed to 1/2, not 1**, with no stated renormalization.
+4. **Knowing vs random host asserted, not shown.** Fixed by adding a
+   parallel route table.
+5. **"Disproportionately" vs exact survivorship.** Spoiled rounds *are*
+   the switch-win cases, not approximately. The README reported this
+   fixed while `faq.items[2]` still said "disproportionately". The
+   external review caught the leftover; no layer here could have, because
+   none reads the sentence.
+6. **A design fix that dropped the requirement.** art-director proposed
+   replacing a "host forbidden" badge with disabled-button styling.
+   Catching it took a human reading the proposed fix. Not a pipeline
+   catch.
+7. **Lock/violet reused for a non-clickable door;** played vs spoiled
+   distinguished by hue only.
+8. **Undeclared color pair at render time**, twice. qa-walker, via
+   `getComputedStyle`. Invisible to `check-contrast.js` and to a source
+   read.
+9. **Ten em dashes after a pass that reported zero.** Found by a manual
+   grep from the orchestrator, which `CLAUDE.md` forbids. Not a pipeline
+   catch. The style pass exists now because of this.
 
 ## What the pipeline missed
 
-The pipeline reported all four verification layers green: the simulation
-check, the contrast check, the claim check, and qa-walker's browser walk. A
-human then opened the built page and walked it as a reader would, and found
-four more defects. Three of them had qa-walker's PASS on them at the time.
+All four layers green. A human then walked the page.
 
-- **The footer was never gated.** Every teaching beat on the page is hidden
-  until the reader unlocks it, but the footer had no gating of its own, so it
-  collapsed upward and rendered directly under the first poll. The reader saw
-  the host-knowledge rule and the colophon before answering the opening
-  question. The root cause is that the footer was never in `SPEC.md`, so
-  qa-walker's "nothing visible before its trigger" check had no entry for it.
-- **The door ineligibility badge marked the wrong doors.** Its class was
-  `door-ineligible-interaction` and it was applied to the player's picked door
-  and to the door the host had opened, meaning "not clickable", not "the host
-  was structurally forbidden from opening this". It was never applied to the
-  car's door. It therefore contradicted the callout rendered directly below
-  it, which read that the host skipped the player's door and the car's door.
-  qa-walker passed it because its assertion checked that the badge did not
-  spoil the round, not that it marked the doors the copy claimed.
-- **The badge was invisible to assistive technology.** It contained no text,
-  no `title` and no `aria-label`, and its only icon was `aria-hidden`. An
-  explicit instruction that any icon carrying meaning must not be
-  `aria-hidden` had been given, and was not caught by any check.
-- **The colophon's repository URL was plain text.** The footer contained no
-  anchor element at all, so the one link the page existed to offer could not
-  be clicked.
+- Footer never gated, so the host-knowledge rule and colophon rendered
+  under the opening poll. Not in `SPEC.md`, so qa-walker had no entry.
+- Ineligibility badge marked "not clickable" doors, not "host forbidden"
+  doors, and contradicted the callout under it.
+- Badge had no accessible name (`aria-hidden` icon, no text).
+- Colophon URL was plain text, not a link.
 
-Every one of these is the same failure shape as the bugs the pipeline did
-catch: a verifier checking correctly against a specification that does not
-mention the thing being checked. The pipeline did not validate that its own
-specification was complete, and no layer in it did. The nine bugs listed under
-"What the pipeline actually found" are therefore the count of defects the
-pipeline found, not the count of defects that existed.
+Same shape as the bugs it did catch: a verifier checking a specification
+that does not mention the thing. A later `## Visible at t=0` contract in
+`SPEC.md`, checked bidirectionally by qa-walker, converts *an unlisted
+rendered region* into a failure. It does not make the spec correct.
 
-That gap is now closed by a layer, not by a promise to be more careful.
-`docs/SPEC.md` carries a `## Visible at t=0` section naming the exact element
-ids expected to be visible on load, and `tools/qa-walk.js` checks the rendered
-page against it in both directions before the walk's first click. Every
-visible element inside `<main>` and `<footer>` is resolved up to its nearest
-ancestor listed in that section; anything resolving to nothing fails and is
-named by tag, id, class, and text. Every id the section lists as visible must
-actually be visible, and every id it lists as not visible must actually not
-be. An ungated footer fails it twice over, by name. After the walk, a second
-check reads `SPEC.md`'s `### Beat N` headings and fails if a beat's copy key
-appears nowhere in `qa-walk.js`'s own source, so a beat cannot be specified
-and left unasserted. Both checks were proved by sabotage in scratch copies
-rather than by inspection: removing the footer's gating fails the first,
-deleting Beat 9's only `gutCheckFinal` assertion fails the second, and an
-unsabotaged copy of the same scratch tree passes.
-
-What this layer checks is that the page renders nothing the spec does not
-account for, and that no specified beat goes unasserted. It does not make the
-spec correct. A region both the page and the spec omit is still invisible to
-it, and the spec can still be wrong about what a beat should say. It converts
-one specific failure, a rendered region no layer ever had an entry for, from
-undetectable into a test failure. It does not convert the spec into ground
-truth.
-
-### What a verifier's own PASS is worth
-
-Three episodes from this repository, each found by reading the artifact or
-asking for the underlying paths, never by accepting the agent's summary.
-
-- learning-designer was asked to leave zero em dashes in `copy.json` and
-  reported that it had. Ten remained. They were found by a manual grep from
-  the orchestrator, which is itself work `CLAUDE.md` forbids the main thread
-  from doing.
-- math-verifier's first implementation of the coverage measurement reported
-  21 unannotated probability-stating strings. The correct count is 17. It had
-  looked for a sibling `_assert` beside each array element, but an annotated
-  array element's assertion lives in a parallel `_assert` array at the
-  matching index, so it counted annotated elements as unannotated.
-- math-verifier's route-arithmetic check took five rounds. Its first version
-  compared only the stated answers and discarded the operands, so
-  "1/3 x 1/9 = 1 in 6" would have passed, which is the same defect class the
-  script was written to catch. Its fourth ended by proposing to change the
-  expected table to match a bug in its own comparison, a change that would
-  have made the check unable to tell 2/6 from 1/3 on the one line whose
-  purpose is that distinction.
-- `check-route-arithmetic.js` passed for two commits while failing to catch
-  the defect it was written for. Its table matched by set membership, so a
-  product stated as 2/6 satisfied the entry intended for the conversion, and
-  the collapsed form the script exists to reject went through. It surfaced
-  only after the three sabotage cases the verifying agent had silently
-  dropped from its own suite were added back, and the commit message claiming
-  the hole was closed was wrong when it was written.
-- The same agent left two deliberately corrupted copies of `copy.json` in
-  `verification/temp-fixed-check/`, inside the repository, rather than in the
-  temp directory it had been told to use. Committing them would have added two
-  files closely resembling the project's source of truth, carrying broken
-  arithmetic, to version control. They were caught by inspection before
-  staging, by no check.
-- The walker's beat-to-spec check shipped a first version that passed
-  vacuously. Zero parsed beats meant the loop body never ran and the check
-  reported success, so renaming `SPEC.md`'s `### Beat N` headings would have
-  left it verifying nothing while still printing a PASS. It is the same hole
-  that had been closed explicitly, with a comment saying so, in the adjacent
-  t=0 check, reintroduced two functions later in the same file in the same
-  sitting.
-- The same agent then reported that the contiguity guard it wrote to close
-  that hole "additionally catches a partial parse." It does not. `[0, 1, 2]`
-  is contiguous from zero and passes, so truncating the beat list from the
-  end went through unflagged. The claim was disproved by running the parser
-  against a renamed-headings copy, not by reading the report, and the gap it
-  concealed needed a second, independent source for the beat list to close.
-- A live test of the ownership hook was reported as held when the hook had
-  not fired at all. The agent it was run against has no `Edit` tool, so the
-  call was rejected before tool dispatch and the hook was never reached. The
-  target file was indeed unmodified, which is what made the wrong conclusion
-  easy to draw: the observation was correct and the inference from it was
-  not. The test proved nothing about the hook and was re-run against a tool
-  the agent actually has. This one was the orchestrator's own report, not an
-  agent's.
-
-In this run, a report of verification work was wrong eight times: seven were
-an agent's own account of what it had done, and one was the orchestrator's.
-Each was caught by inspecting the artifact rather than the report.
+A report of verification work was wrong eight times in this run (seven
+agent self-reports, one orchestrator). Examples: coverage counted 21 gaps
+instead of 17; a route-arithmetic check passed the defect it was written
+for, by set membership; a beat-to-spec check passed vacuously when it
+parsed zero beats; an ownership-hook test was reported held when the hook
+never fired. Each was caught by inspecting the artifact, not the report.
 
 ## The external review
 
-An independent model was asked to review this repository adversarially: to
-check every probability statement against Bayes rather than against `sim.js`,
-run the verification scripts, drive the live page as a reader who believes the
-odds are 50/50, and test the experimental claims. It found substantive errors,
-including a wrong partition in the conditional argument at the center of the
-page and a verification layer that does not check what this README said it
-checked. It is published unedited at
-[docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md), including its overall
-verdict, which is that the approach is not worth its cost as implemented.
+An independent model checked every probability statement against Bayes
+rather than against `sim.js`, ran the scripts, drove the live page as a
+50/50 reader, and tested the experimental claims. Verdict: the approach
+is not worth its cost as implemented. Unedited:
+[docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md).
 
-Fixed since the review:
+Fixed since: knowing-host Route 3 (wrong partition), "1/3 x 1 = 2 in 6",
+Beat 1 announcing 2/3 before play, the 98-number dump, this README's
+overclaim that every numeric claim is checked, the 49% figure presented
+as a measurement, LESSONS/TEAM/SPEC contract drift, the missing
+design-reviewer → art-director route, FAQ "disproportionately", a
+specimen banner, and a colophon that no longer says every number is
+checked.
 
-- The knowing-host Route 3 row, which partitioned on the reader's pick rather
-  than the car's location, and the note in `SPEC.md` telling the reader not to
-  line the two route tables up.
-- "1/3 x 1 = 2 in 6", now stated as a product and a separate conversion.
-- Beat 1 announcing the 2/3 figure before the reader plays anything.
-- The 98 opened door numbers interpolated into the 100-door reveal.
-- This README's claim that every numeric claim is checked against a real
-  simulation, and its presentation of the 49% orchestrator figure as a
-  measurement.
-- `LESSONS.md`'s five-bug count against this README's nine, `TEAM.md`'s stale
-  opus entries, and `SPEC.md` section 4's `playRound` signature without
-  `hostMode`.
-- The missing design-reviewer to art-director route in `CLAUDE.md` step 9, and
-  the unstated rule for routing a qa-walker ledger mismatch.
-- The one-skeptic-round contradiction, resolved by stating in `CLAUDE.md` and
-  here that the limit is per phase and caps the pre-build review only.
-- FAQ item 3's "disproportionately", which the bug list above had reported as
-  fixed while the shipped page still carried it. It now states the exact
-  relationship, and that bug-list entry has been amended to record that it
-  misreported its own fix. This one was found by cross-checking the review
-  against the repository, not by any verification layer.
-
-Open, and not addressed by any of the above:
-
-- The four verification layers overlap rather than being independent, and
-  design-reviewer's ledger check duplicates qa-walker's by reading source
-  instead of computed style.
-- skeptic has Read access only, so it reviews source and never the rendered
-  page. The footer leak, the badge on the wrong doors, the 98-number dump and
-  the unlinked URL were all invisible to it for that reason.
-- `check-claims.js` still never parses the sentence it is attached to, so the
-  numeric strings carrying no assertion, including every joint probability in
-  both route tables, remain unchecked by anything but a human. Since commit
-  `6c916c3` the script at least measures and prints that gap on every run, so
-  it is no longer invisible, but measuring it is not closing it.
-- File ownership was a prompt instruction enforced by nothing. It is now
-  checked by `tools/check-ownership.js`, wired as a `PreToolUse` hook and
-  required after every writer returns, and every writer's prohibitions list
-  the other agents' files as explicit paths in both directions. This is
-  narrowed rather than closed: the hook only sees tools carrying an explicit
-  file path, so an agent with Bash still writes any path unchecked, which was
-  confirmed by test rather than assumed. `math-verifier` and `qa-walker` have
-  Bash. A bypass is treated as a pipeline failure rather than a valid edit,
-  which is a policy, not an enforcement.
-- The nine-bug claim has no evidence in this repository: no skeptic reports,
-  no FAIL logs, no transcripts, no per-bug commits, with the whole pipeline in
-  one commit.
-- The bug count spans work the cost figure explicitly excludes, so the two
-  headline numbers describe different processes.
-- Two of the nine were not pipeline catches by this README's own account: a
-  human reading a proposed fix, and a manual grep from the orchestrator, which
-  `CLAUDE.md` forbids the main thread from doing.
-- No control run was performed, so the single-session counterfactual is
-  asserted throughout.
-- The sabotage test `LESSONS.md` recommends is not recorded anywhere here.
-- Reproducibility: no runner, no example prompts, no transcripts, no pinned
-  Node version, no rubric for the human approval gate. Porting to another
-  domain requires rewriting all eight prompts.
-- math-verifier's frontmatter says not to use it to judge code style while its
-  job includes a mechanical style pass.
-- Beat 3's length, the 500-round sample in the mechanism contrast, and the
-  closing beat reopening the biased-host objection.
-- `qa-walk.js`'s Beat 2 check drives the round through a probabilistic retry
-  loop, needing both a car-pick and a goat-pick within a fixed number of
-  attempts. It can exhaust them and fail a run in which nothing is wrong with
-  the page. With `maxAttempts` at 15 and a car-pick probability of 1/3, that
-  is `(2/3)^15`, about one run in 438. It happened once during this work, and
-  re-running passed. A verification layer that fails on its own sampling
-  is a layer whose FAIL cannot be read at face value, which is the property
-  the rest of this section is about.
-- The `gutCheckFinal` copy key has exactly one assertion in `qa-walk.js`. That
-  is the thinnest coverage on the page, and it is on Beat 9, the beat that
-  closes the argument and asks the reader whether they changed their mind. It
-  satisfies the beat-to-walker presence check, which is presence only and by
-  design says nothing about how thoroughly a beat is tested.
+Still open: overlapping checks; skeptic reads source, never the rendered
+page; `check-claims.js` still does not parse sentences; ownership hook
+cannot see a shell redirect; no transcripts for the nine bugs; no control
+run; no recorded sabotage test; no runner (porting means rewriting eight
+prompts); Beat 3's length; qa-walker's Beat 2 retry can fail a good page
+(~1 run in 438); Beat 9 is the thinnest walker coverage on the page.
 
 ## What it cost
 
-These numbers cover the first end-to-end run only, spec through the first
-complete verification pass, not the later compression and design-review
-rounds described above. They come from a Claude Pro plan; the dollar figure
-is the API-equivalent cost, not what was actually billed under the plan,
-and this run exhausted the plan's usage window and drew on additional
-credits beyond it.
+First end-to-end run only: spec through the first complete verification
+pass, not later compression and design-review rounds. Claude Pro plan;
+the dollar figure is API-equivalent, not what was billed.
 
-- API-equivalent cost: $31.81.
-- API duration: 2h 23m. Wall-clock duration: 17h 24m.
-- Code changes: 6,238 lines added, 514 removed.
-
-By model:
+- $31.81 API-equivalent. API time 2h 23m. Wall clock 17h 24m.
+- 6,238 lines added, 514 removed.
 
 | model | cost | share | input | output | cache read | cache write |
 |---|---|---|---|---|---|---|
@@ -698,104 +204,32 @@ By model:
 | Opus | $1.87 | 6% | 94.4k | 24.3k | 243.1k | 106.7k |
 | Haiku | $0.53 | 2% | 10.6k | 39.2k | 984.3k | 179.8k |
 
-Share of total usage by subagent, as reported by Claude Code: learning-designer
-16%, qa-walker 15%, ui-engineer 9%, art-director 6%, skeptic 3%,
-design-reviewer 1%, math-verifier 1%. Those are seven figures for eight
-agents: sim-engineer does not appear in the list at all. They were reported
-as individual characteristics of usage, not as a partition of it, so they
-carry no guarantee of summing to 100%. They sum to 51%.
+Subagent share, as reported: learning-designer 16%, qa-walker 15%,
+ui-engineer 9%, art-director 6%, skeptic 3%, design-reviewer 1%,
+math-verifier 1%. Seven figures for eight agents; sim-engineer is
+missing. They sum to 51%. 42% of usage happened at over 150k tokens of
+context. Read the rest as a hypothesis the numbers permit, not as
+measured orchestrator overhead.
 
-What consumed the other 49% is not something these numbers answer. The
-hypothesis they are consistent with is that the orchestrator's own context
-accounts for much of it: 42% of total usage happened at over 150k tokens of
-context, and a long-running coordinator accumulates context from every
-delegation, every routing decision, and every status check, none of which
-is free just because it isn't a subagent call. But sim-engineer's missing
-share sits in that same 49%, and nothing in the source data splits it. Read
-coordination overhead here as a hypothesis the numbers permit, not as a
-measurement.
-
-The honest comparison: a single well-prompted Claude Code session would
-have built a page like this for a small fraction of that cost. What the
-extra cost bought is the bug list above, not a better-looking page.
-
-## How to reproduce something similar
-
-Setup:
-
-1. Clone the repo. The explainer itself (`index.html`, `sim.js`, `viz.js`,
-   `tokens.css`, `copy.json`) needs nothing installed; open `index.html`
-   directly.
-2. For verification, you need Node.js on your machine (no specific version
-   is pinned in this repo).
-3. For the browser-driven check, `cd tools && npm install`. Installing the
-   `playwright` package is supposed to download the Chromium build it needs
-   automatically. In practice, on this machine that didn't happen, so if
-   `node qa-walk.js` can't find a browser afterward, run
-   `npx playwright install chromium` inside `tools/` as an explicit
-   fallback.
-4. Put `CLAUDE.md` at the repo root, not in a docs folder, if you want
-   Claude Code to actually load it as orchestrator policy when you open the
-   project. It only auto-loads from there.
-
-The design rules that mattered most, independent of this specific project:
-
-- **File ownership is absolute, one writer per file.** This is what makes
-  parallelism safe without a merge step: art-director and sim-engineer can
-  run at the same time because neither can touch the other's files, and the
-  same is true of skeptic and design-reviewer.
-- **A claim carries its own machine-readable assertion.** A number in the
-  copy can carry an assertion object next to it. A color pair carries a
-  claimed ratio next to it in a fixed, parseable grammar. Neither needs to
-  exist for a page to work, they exist so a script can independently confirm
-  them instead of trusting the agent that wrote them. The limit, which cost
-  this project real coverage, is that a script can only check the claims
-  someone remembered to annotate, and nothing flags the ones nobody did.
-- **No state may be distinguished by color alone.** Every meaningfully
-  different visual state on the page (a prize door versus a goat door, a
-  knowing host versus a random one, a forced case versus a free one) has to
-  differ by shape, border, or icon too. This is an accessibility rule and
-  it's also what kept catching real semantic bugs, a badge that looked fine
-  but reused a color meaning that already meant something else.
-- **The design system is tokens only, no selectors.** `tokens.css` is
-  exclusively custom properties. Nothing in it targets an element. This
-  keeps "what color is this" and "what has this color" fully separated, so
-  a token can be audited, renamed, or contrast-checked without knowing
-  anything about the page that consumes it.
-
-## Further reading
-
-[`docs/LESSONS.md`](docs/LESSONS.md) generalizes the design rules above into
-a standalone playbook, distilled from this run but not specific to Monty
-Hall or to this pipeline. If you're building a different multi-agent
-pipeline, that document, not this README, is the one to start from.
+A single well-prompted session would have built a comparable page for a
+small fraction of that cost. The extra cost bought the bug list, not a
+better-looking page.
 
 ## Limitations
 
-This approach costs several times what a single well-prompted session would
-cost to produce a comparable page, not a marginal amount more. If the
-numbers above aren't worth it for your case, that's a reasonable
-conclusion, not a failure to use the pipeline correctly.
+Several times the cost of one session, not a marginal overhead. The work
+has to split into files with one owner, and the claims have to be the
+kind a script can fail. Taste, visual quality, and whether an abstraction
+is right are out of scope; the pipeline checks correctness, not whether
+`DESIGN.md` looks good or the prose is pleasant.
 
-It depends on the work being cleanly partitionable into files with
-unambiguous, non-overlapping ownership. This project split cleanly into
-spec, copy, tokens, design rationale, simulation, markup, and three kinds of
-verification. A tightly coupled single-file project, or one where two
-concerns can't be separated into two files, doesn't have obvious ownership
-boundaries to assign, and the whole model of exclusive file ownership stops
-applying cleanly.
+To run the *page*: open `index.html`, or the
+[live demo](https://gabriel-dg.github.io/multi-agent-pipeline-study/).
+To run the *checks*: Node.js (unpinned) and, for the browser walk,
+`cd tools && npm install` (fallback: `npx playwright install chromium`).
+There is no pipeline runner.
 
-It depends on claims being independently checkable by code at all. "Is this
-contrast ratio real," "does this simulation match the closed-form answer,"
-and "does this declared assertion match the simulation" are yes-or-no
-questions a script can answer. Whether an API design is good, or an abstraction is the
-right one, generally isn't that kind of question, and no role in this
-pipeline would have caught a problem of that kind.
-
-No layer here judges visual quality or writing quality as opposed to
-correctness. design-reviewer checks whether the built page is faithful to
-what `DESIGN.md` already decided, not whether `DESIGN.md`'s decisions
-produce a page that looks good. skeptic checks whether the argument is
-airtight, not whether the prose is pleasant to read. Both of those stayed a
-human judgment call throughout this project; the pipeline verifies
-correctness, it doesn't replace taste.
+**Read next:** the roast,
+[docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md); the playbook,
+[docs/LESSONS.md](docs/LESSONS.md); the pipeline definition,
+[`CLAUDE.md`](CLAUDE.md).
