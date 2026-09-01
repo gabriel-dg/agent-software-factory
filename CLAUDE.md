@@ -41,6 +41,9 @@ Paths outside the repository, such as the scratchpad, are not the check's
 business and are always allowed.
 
 ## Pipeline
+Human-facing diagrams of this sequence: `docs/PIPELINE.md`. This list is
+the contract; the diagrams are an illustration.
+
 1. learning-designer produces SPEC.md and copy.json. STOP and show me before continuing.
 2. skeptic reviews SPEC.md and copy.json alone, before anything gets built.
    Route findings to learning-designer. Max 1 revision round, then continue.

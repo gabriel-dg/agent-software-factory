@@ -10,13 +10,15 @@
 | qa-walker | sonnet | Read, Write, Bash | tools/qa-walk.js | index.html, viz.js, docs/SPEC.md, copy.json |
 | skeptic | opus | Read | nothing | docs/SPEC.md, copy.json |
 | design-reviewer | sonnet | Read | nothing | index.html, viz.js, docs/DESIGN.md, tokens.css |
-| orchestrator (main thread) | - | - | README.md, CLAUDE.md, LICENSE, .gitignore, docs/TEAM.md, docs/LESSONS.md, docs/EXTERNAL-REVIEW.md, tools/check-ownership.js, tools/package.json, tools/package-lock.json, .claude/, docs/img/ | all |
+| orchestrator (main thread) | - | - | README.md, CLAUDE.md, LICENSE, .gitignore, docs/TEAM.md, docs/LESSONS.md, docs/EXTERNAL-REVIEW.md, docs/PIPELINE.md, tools/check-ownership.js, tools/package.json, tools/package-lock.json, .claude/, docs/img/ | all |
 
 This table is the source of truth for file ownership, and
 `tools/check-ownership.js` hardcodes it. If the two disagree, that is a defect
 in one of them, not a judgement call. Ownership is checked mechanically rather
 than asserted: see CLAUDE.md's "File ownership" section for what that check
-does and does not cover.
+does and does not cover. A write-only diagram of the product files is in
+[PIPELINE.md](PIPELINE.md); if that drawing disagrees with this table, this
+table wins.
 
 ## Product
 A single-page interactive explainer that convinces a skeptic the Monty Hall

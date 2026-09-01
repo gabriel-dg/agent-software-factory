@@ -18,8 +18,8 @@ That review is published unedited in
 [docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md).
 
 If you are here to design a different pipeline, skip this file and start at
-[docs/LESSONS.md](docs/LESSONS.md). This README is the report of *this*
-run.
+[docs/LESSONS.md](docs/LESSONS.md). Wiring diagrams for *this* run:
+[docs/PIPELINE.md](docs/PIPELINE.md). This README is the report of the run.
 
 The explainer is at the
 [live demo](https://gabriel-dg.github.io/multi-agent-pipeline-study/).
@@ -71,7 +71,8 @@ orchestrator routes every arrow. Writers run sequentially except where
 files are disjoint; reviewers run in parallel. Author and verifier are
 always separate. Roster and ownership:
 [`docs/TEAM.md`](docs/TEAM.md). Sequence, gates, and round limits:
-[`CLAUDE.md`](CLAUDE.md). Agent files:
+[`CLAUDE.md`](CLAUDE.md). Wiring diagrams:
+[`docs/PIPELINE.md`](docs/PIPELINE.md). Agent files:
 [`.claude/agents/`](.claude/agents/).
 
 Monty Hall was the test case because its answer is settled by simulation,
@@ -231,5 +232,6 @@ There is no pipeline runner.
 
 **Read next:** the roast,
 [docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md); the playbook,
-[docs/LESSONS.md](docs/LESSONS.md); the pipeline definition,
+[docs/LESSONS.md](docs/LESSONS.md); the wiring diagrams,
+[docs/PIPELINE.md](docs/PIPELINE.md); the pipeline definition,
 [`CLAUDE.md`](CLAUDE.md).

@@ -57,6 +57,7 @@ const OWNERSHIP = {
     "docs/TEAM.md",
     "docs/LESSONS.md",
     "docs/EXTERNAL-REVIEW.md",
+    "docs/PIPELINE.md",
     "tools/check-ownership.js",
     "tools/package.json",
     "tools/package-lock.json"

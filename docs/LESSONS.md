@@ -246,6 +246,9 @@ This is the only thing that turns a PASS into information.
 
 ## Appendix: reference run data
 
+Wiring diagrams of that run: [PIPELINE.md](PIPELINE.md). This playbook is
+the generalization; that page is the map.
+
 Interactive explainer, 8 agents, verifiable output, splittable into files.
 
 API-equivalent cost $31.81. API time 2h 23m, wall clock 17h 24m. 6,238
