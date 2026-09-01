@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Monty Hall Problem</title>
+<title>Specimen: Monty Hall explainer (8-agent field report)</title>
 <link rel="stylesheet" href="tokens.css">
 <style>
   * { box-sizing: border-box; }
@@ -56,6 +56,28 @@
   .site-header .subtitle { font-size: var(--font-size-md); color: var(--color-text-secondary); }
   .site-header .intro { font-size: var(--font-size-base); color: var(--color-text-secondary); max-width: var(--content-max-width); }
   .data { font-family: var(--font-family-mono); }
+
+  /* Study-framing banner: meta chrome, not a teaching beat. Reuses the
+     already-ledged callout-neutral triplet (DESIGN.md Contrast pairs)
+     rather than a new surface. Anchors inherit that same foreground
+     (color: inherit) and are underlined, matching the colophon pattern
+     so no unverified link-text pair is introduced. --color-link-text-hover
+     is reserved/unwired and must not be consumed. */
+  .study-banner {
+    background: var(--color-callout-neutral-bg);
+    border-bottom: var(--border-width-thin) solid var(--color-callout-neutral-border);
+    color: var(--color-callout-neutral-text);
+    padding: var(--space-sm) 0;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-body);
+  }
+  .study-banner a { color: inherit; text-decoration: underline; }
+  .study-banner-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-md);
+    margin-bottom: 0;
+  }
 
   /* buttons */
   button { font-family: inherit; }
@@ -455,6 +477,16 @@
 </head>
 <body>
 
+<div id="study-banner" class="study-banner">
+  <div class="wrap">
+    <p id="study-banner-text"></p>
+    <p class="study-banner-links">
+      <a id="study-banner-report" target="_blank" rel="noopener noreferrer"></a>
+      <a id="study-banner-review" target="_blank" rel="noopener noreferrer"></a>
+    </p>
+  </div>
+</div>
+
 <header class="site-header wrap">
   <h1 id="meta-title"></h1>
   <p class="subtitle" id="meta-subtitle"></p>
@@ -486,6 +518,15 @@
 
 <script type="application/json" id="copy">
 {
+  "studyBanner": {
+    "text": "This page is the test article from a field report on an 8-agent pipeline, not a standalone product.",
+    "reportLabel": "Read the report",
+    "reportUrl": "https://github.com/gabriel-dg/multi-agent-pipeline-study",
+    "reviewLabel": "Read the external review",
+    "reviewUrl": "https://github.com/gabriel-dg/multi-agent-pipeline-study/blob/main/docs/EXTERNAL-REVIEW.md",
+    "documentTitle": "Specimen: Monty Hall explainer (8-agent field report)"
+  },
+
   "meta": {
     "title": "The Monty Hall Problem",
     "subtitle": "You think it's 50/50. Play it and check.",

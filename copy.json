@@ -1,4 +1,13 @@
 {
+  "studyBanner": {
+    "text": "This page is the test article from a field report on an 8-agent pipeline, not a standalone product.",
+    "reportLabel": "Read the report",
+    "reportUrl": "https://github.com/gabriel-dg/multi-agent-pipeline-study",
+    "reviewLabel": "Read the external review",
+    "reviewUrl": "https://github.com/gabriel-dg/multi-agent-pipeline-study/blob/main/docs/EXTERNAL-REVIEW.md",
+    "documentTitle": "Specimen: Monty Hall explainer (8-agent field report)"
+  },
+
   "meta": {
     "title": "The Monty Hall Problem",
     "subtitle": "You think it's 50/50. Play it and check.",

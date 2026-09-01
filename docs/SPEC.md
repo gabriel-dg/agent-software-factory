@@ -1,6 +1,6 @@
 # SPEC.md — Monty Hall Interactive Explainer
 ### Pedagogical specification (learning-designer)
-### Revision 10: load-state visibility contract plus §6 key-map fix (QA census)
+### Revision 11: specimen-framing banner visible at t=0 (non-teaching)
 
 This document defines the sequence of beats a reader moves through, what each
 beat must accomplish psychologically/pedagogically, and what interaction each
@@ -357,6 +357,17 @@ fixed by adding it to §6 in its correct position. No beat was added,
 removed, or reordered; no copy key's content changed; `copy.json` was not
 opened or modified this round; no `_assert`, `expected`, or `tolerance`
 value was touched. Full detail in §7.
+
+**Revision 11 (this one)** is a scoped addition of a specimen-framing
+banner, visible at t=0 above the on-page title. This is not a teaching
+beat and must not assert 2/3 or any other odds figure. No beat was added,
+removed, or reordered. The on-page H1 (`meta.title`) stays "The Monty Hall
+Problem"; `meta.subtitle`, `meta.intro`, and `colophon` are unchanged. A
+new top-level copy key, `studyBanner`, carries the banner sentence, two
+external-link labels and URLs (report and external review), and the
+browser document/tab title. `#study-banner` is added to the Visible on
+load list as a top-level region, not nested inside `#meta-title`. See §7
+for the itemized changelog.
 
 ---
 
@@ -1107,8 +1118,16 @@ not listed below, since they are ui-engineer's implementation detail and
 naming them here would couple this spec to `viz.js`'s internal id choices;
 they are covered by `#beat-gutcheck0`.
 
+`#study-banner` is study-framing chrome, not a teaching beat. It is
+visible on load by design and does not leak teaching-beat content: no win
+rates, no odds figures, no host-rule spoilers. Nested links inside it are
+covered by the ancestor and must not be listed here.
+
 ### Visible on load
 
+- `#study-banner` — study-framing banner, visible on load by design, sits
+  above the on-page title; not a teaching beat and does not leak
+  teaching-beat content
 - `#meta-title` — the page's main title
 - `#meta-subtitle` — the page's subtitle, directly under the title
 - `#meta-intro` — the short problem-statement intro copy that precedes Beat 0
@@ -1194,6 +1213,11 @@ does.
 ## 6. copy.json key map
 
 ```
+studyBanner           — specimen-framing banner (sentence, two external
+                        link labels and URLs, browser tab title), not a
+                        teaching beat. Nested: text, reportLabel,
+                        reportUrl, reviewLabel, reviewUrl, documentTitle
+                        (browser tab title, not the on-page H1).
 meta                 — page title/subtitle
 gutCheckInitial       — Beat 0
 rules                 — Beat 1
@@ -1220,6 +1244,35 @@ colophon                — credits/meta paragraph on how the page itself was
 ```
 
 ## 7. Revision log
+
+### Revision 11 (this round): specimen-framing banner visible at t=0, plus new `studyBanner` copy key
+
+A scoped addition so anyone landing on the live page can see that it is
+the test article of a field report on an 8-agent pipeline, not a
+standalone product. This is not a teaching beat: no win rate, no odds
+figure, no host-rule spoiler. No beat was added, removed, or reordered;
+no `_assert` was added (the banner contains no number a simulation could
+check; "8-agent" is a count of agents, not a probability claim);
+`meta.title`, `meta.subtitle`, `meta.intro`, and `colophon` were not
+changed.
+
+1. **New top-level copy key `studyBanner` in `copy.json`.** Nested
+   fields, kept separate so ui-engineer can wire real anchors without
+   parsing prose: `text` (the banner sentence), `reportLabel` /
+   `reportUrl`, `reviewLabel` / `reviewUrl`, and `documentTitle` (the
+   browser tab title, not the on-page H1).
+2. **`#study-banner` added to "### Visible on load"** as a top-level
+   region, not nested inside `#meta-title`. Nested link ids inside the
+   banner are not listed; they are covered by the ancestor. Existing
+   visible and not-visible ids are unchanged. The banner is
+   study-framing, visible on load by design, and does not leak
+   teaching-beat content.
+3. **§6's key map** gained `studyBanner` as the first entry, in the same
+   format as `meta`, `footer`, and `colophon` (no capitalized
+   "Beat <digits>" marker, since this is not a teaching beat). Existing
+   key-map em dashes are unchanged.
+
+Header line and top-of-document summary block updated to Revision 11.
 
 ### Revision 10 (this round): load-state visibility contract, plus §6's missing `colophon` key
 

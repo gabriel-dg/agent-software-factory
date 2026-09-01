@@ -183,6 +183,18 @@
   // -----------------------------------------------------------------------
   // Meta + footer
   // -----------------------------------------------------------------------
+  function renderStudyBanner() {
+    var b = copy.studyBanner;
+    document.title = b.documentTitle;
+    document.getElementById("study-banner-text").textContent = b.text;
+    var report = document.getElementById("study-banner-report");
+    report.textContent = b.reportLabel;
+    report.href = b.reportUrl;
+    var review = document.getElementById("study-banner-review");
+    review.textContent = b.reviewLabel;
+    review.href = b.reviewUrl;
+  }
+
   function renderMeta() {
     document.getElementById("meta-title").textContent = copy.meta.title;
     document.getElementById("meta-subtitle").textContent = copy.meta.subtitle;
@@ -1037,6 +1049,7 @@
   // Init
   // -----------------------------------------------------------------------
   function init() {
+    renderStudyBanner();
     renderMeta();
     renderGutcheck0();
     renderRules();
