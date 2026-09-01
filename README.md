@@ -478,6 +478,32 @@ specification is complete, and no layer in it can. The nine bugs listed under
 "What the pipeline actually found" are therefore the count of defects the
 pipeline found, not the count of defects that existed.
 
+### What a verifier's own PASS is worth
+
+Three episodes from this repository, each found by reading the artifact or
+asking for the underlying paths, never by accepting the agent's summary.
+
+- learning-designer was asked to leave zero em dashes in `copy.json` and
+  reported that it had. Ten remained. They were found by a manual grep from
+  the orchestrator, which is itself work `CLAUDE.md` forbids the main thread
+  from doing.
+- math-verifier's first implementation of the coverage measurement reported
+  21 unannotated probability-stating strings. The correct count is 17. It had
+  looked for a sibling `_assert` beside each array element, but an annotated
+  array element's assertion lives in a parallel `_assert` array at the
+  matching index, so it counted annotated elements as unannotated.
+- math-verifier's route-arithmetic check took five rounds. Its first version
+  compared only the stated answers and discarded the operands, so
+  "1/3 x 1/9 = 1 in 6" would have passed, which is the same defect class the
+  script was written to catch. Its fourth ended by proposing to change the
+  expected table to match a bug in its own comparison, a change that would
+  have made the check unable to tell 2/6 from 1/3 on the one line whose
+  purpose is that distinction.
+
+In this run, a verifying agent's own report of its work was wrong three
+times, and each time it was caught by inspecting the artifact rather than the
+report.
+
 ## The external review
 
 An independent model was asked to review this repository adversarially: to

@@ -123,7 +123,7 @@ function verifyDetail(d, exp) {
         const statedValue = eq.resultValue;
         const statedLiteral = eq.resultLiteral;
         const internalOk = computed.equals(statedValue);
-        const tableOk = internalOk && exp.some(e => e[0] === statedLiteral[0] && e[1] === statedLiteral[1]);
+        const tableOk = exp.some(e => e[0] === statedLiteral[0] && e[1] === statedLiteral[1]);
         r.push({
           equation: pm[1].trim(),
           computed: computed,
@@ -172,7 +172,7 @@ function verifyDetail(d, exp) {
         const statedValue = eq.resultValue;
         const statedLiteral = eq.resultLiteral;
         const internalOk = computed.equals(statedValue);
-        const tableOk = internalOk && exp.some(e => e[0] === statedLiteral[0] && e[1] === statedLiteral[1]);
+        const tableOk = exp.some(e => e[0] === statedLiteral[0] && e[1] === statedLiteral[1]);
         r.push({
           equation: clause,
           computed: computed,
@@ -197,7 +197,7 @@ function verifyWorked(d, exp) {
       const statedValue = eq.resultValue;
       const statedLiteral = eq.resultLiteral;
       const internalOk = computed.equals(statedValue);
-      const tableOk = internalOk && exp.some(e => e[0] === statedLiteral[0] && e[1] === statedLiteral[1]);
+      const tableOk = exp.some(e => e[0] === statedLiteral[0] && e[1] === statedLiteral[1]);
       r.push({
         equation: am[1].trim(),
         computed: computed,
@@ -215,7 +215,7 @@ function verifyWorked(d, exp) {
       const statedValue = eq.resultValue;
       const statedLiteral = eq.resultLiteral;
       const internalOk = computed.equals(statedValue);
-      const tableOk = internalOk && exp.some(e => e[0] === statedLiteral[0] && e[1] === statedLiteral[1]);
+      const tableOk = exp.some(e => e[0] === statedLiteral[0] && e[1] === statedLiteral[1]);
       r.push({
         equation: m[1].trim(),
         computed: computed,
@@ -245,8 +245,14 @@ try {
       let good = true;
       for (const r of rs) {
         if (r.error) { results.push('FAIL ' + k + ' | PARSE: ' + r.error); good = false; fail++; }
-        else if (!r.internalOk) { results.push('FAIL ' + k + ' | INTERNAL CONSISTENCY: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString()); good = false; fail++; }
-        else if (!r.tableOk) { results.push('FAIL ' + k + ' | TABLE MISMATCH: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']'); good = false; fail++; }
+        else if (!r.internalOk || !r.tableOk) {
+          let failMessages = [];
+          if (!r.internalOk) failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
+          if (!r.tableOk) failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
+          results.push('FAIL ' + k + ' | ' + failMessages.join(' | '));
+          good = false;
+          fail++;
+        }
       }
       if (good) { results.push('PASS ' + k); pass++; }
     } catch (er) { results.push('FAIL ' + k + ' | ERROR: ' + er.message); fail++; }
@@ -262,8 +268,14 @@ try {
         let good = true;
         for (const r of rs) {
           if (r.error) { results.push('FAIL ' + k0 + ' | PARSE: ' + r.error); good = false; fail++; }
-          else if (!r.internalOk) { results.push('FAIL ' + k0 + ' | INTERNAL CONSISTENCY: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString()); good = false; fail++; }
-          else if (!r.tableOk) { results.push('FAIL ' + k0 + ' | TABLE MISMATCH: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e0.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']'); good = false; fail++; }
+          else if (!r.internalOk || !r.tableOk) {
+            let failMessages = [];
+            if (!r.internalOk) failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
+            if (!r.tableOk) failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e0.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
+            results.push('FAIL ' + k0 + ' | ' + failMessages.join(' | '));
+            good = false;
+            fail++;
+          }
         }
         if (good) { results.push('PASS ' + k0); pass++; }
       }
@@ -279,8 +291,14 @@ try {
       let good = true;
       for (const r of rs) {
         if (r.error) { results.push('FAIL ' + k + ' | PARSE: ' + r.error); good = false; fail++; }
-        else if (!r.internalOk) { results.push('FAIL ' + k + ' | INTERNAL CONSISTENCY: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString()); good = false; fail++; }
-        else if (!r.tableOk) { results.push('FAIL ' + k + ' | TABLE MISMATCH: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']'); good = false; fail++; }
+        else if (!r.internalOk || !r.tableOk) {
+          let failMessages = [];
+          if (!r.internalOk) failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
+          if (!r.tableOk) failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
+          results.push('FAIL ' + k + ' | ' + failMessages.join(' | '));
+          good = false;
+          fail++;
+        }
       }
       if (good) { results.push('PASS ' + k); pass++; }
     } catch (er) { results.push('FAIL ' + k + ' | ERROR: ' + er.message); fail++; }
@@ -296,8 +314,14 @@ try {
         let good = true;
         for (const r of rs) {
           if (r.error) { results.push('FAIL ' + k2 + ' | PARSE: ' + r.error); good = false; fail++; }
-          else if (!r.internalOk) { results.push('FAIL ' + k2 + ' | INTERNAL CONSISTENCY: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString()); good = false; fail++; }
-          else if (!r.tableOk) { results.push('FAIL ' + k2 + ' | TABLE MISMATCH: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e2.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']'); good = false; fail++; }
+          else if (!r.internalOk || !r.tableOk) {
+            let failMessages = [];
+            if (!r.internalOk) failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
+            if (!r.tableOk) failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e2.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
+            results.push('FAIL ' + k2 + ' | ' + failMessages.join(' | '));
+            good = false;
+            fail++;
+          }
         }
         if (good) { results.push('PASS ' + k2); pass++; }
       }
