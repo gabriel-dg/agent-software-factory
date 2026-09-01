@@ -88,6 +88,28 @@ const mutations = [
         worked.replace('1/6 + 1/6 = 2/6', '1/6 + 1/6 = 1/3');
     },
     expectTableFail: true
+  },
+  {
+    name: 'k: DELETE knowingHost.routes[2].detail key',
+    apply: (copy) => {
+      delete copy.mechanismContrast.threeCases.whyYourDoorDoesntMove.knowingHost.routes[2].detail;
+    }
+  },
+  {
+    name: 'l: Collapse routes[1] product to "1/3 x 1 = 2/6" (value-consistent, form-wrong)',
+    apply: (copy) => {
+      const detail = copy.mechanismContrast.threeCases.whyYourDoorDoesntMove.knowingHost.routes[1].detail;
+      copy.mechanismContrast.threeCases.whyYourDoorDoesntMove.knowingHost.routes[1].detail =
+        detail.replace('1/3 x 1 = 1/3', '1/3 x 1 = 2/6');
+    }
+  },
+  {
+    name: 'm: Change routes[2] joint probability from 0 to 1/6',
+    apply: (copy) => {
+      const detail = copy.mechanismContrast.threeCases.whyYourDoorDoesntMove.knowingHost.routes[2].detail;
+      copy.mechanismContrast.threeCases.whyYourDoorDoesntMove.knowingHost.routes[2].detail =
+        detail.replace('Joint probability: 0.', 'Joint probability: 1/6.');
+    }
   }
 ];
 
@@ -119,7 +141,6 @@ for (let i = 0; i < mutations.length; i++) {
     // Script exited non-zero — check if this is expected
     if (mutation.expectTableFail) {
       // For mutation j, we expect it to fail on table agreement
-      // Check the output to verify it's a TABLE AGREEMENT FAIL failure
       if (err.stdout && err.stdout.includes('TABLE AGREEMENT FAIL')) {
         console.log(`PASS ${mutation.name} | Correctly failed table agreement (PASS internal + FAIL table)`);
         sabotagePassCount++;
