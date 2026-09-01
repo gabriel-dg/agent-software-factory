@@ -1,9 +1,11 @@
 // check-claims.js — Verify quantitative claims in copy.json against sim.js
 // Also performs mechanical style checks on all string values
+// Also invokes check-route-arithmetic.js to verify exact equation algebra
 
 const sim = require('../sim.js');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const copyJsonPath = path.join(__dirname, '..', 'copy.json');
 const copyJson = JSON.parse(fs.readFileSync(copyJsonPath, 'utf8'));
@@ -547,6 +549,21 @@ if (gap.length > 0) {
   }
 }
 
+// Now invoke check-route-arithmetic.js
+console.log('\nROUTE ARITHMETIC VERIFICATION:');
+let arithmeticFailCount = 0;
+try {
+  const arithmeticScript = path.join(__dirname, 'check-route-arithmetic.js');
+  const arithmeticOutput = execSync(`node "${arithmeticScript}"`, { encoding: 'utf8' });
+  console.log(arithmeticOutput);
+  // The script's exit code will tell us if it passed or failed
+  // If it didn't fail, it would exit 0, but we'll check below
+} catch (err) {
+  // execSync throws if the process exits with non-zero code
+  console.log(err.stdout);
+  arithmeticFailCount = 1; // Mark as failed
+}
+
 // Final summary
 console.log('\n--- SUMMARY ---');
 console.log(`Assertions evaluated: ${assertionCount}`);
@@ -555,5 +572,6 @@ console.log(`Total probability strings: ${totalProbabilityStrings}`);
 console.log(`Annotated (with assertion): ${annotatedCount}`);
 console.log(`Coverage gap (without assertion): ${gap.length}`);
 
-console.log('\n' + (failCount === 0 ? 'PASS' : 'FAIL'));
-process.exit(failCount === 0 ? 0 : 1);
+const overallFailCount = failCount + arithmeticFailCount;
+console.log('\n' + (overallFailCount === 0 ? 'PASS' : 'FAIL'));
+process.exit(overallFailCount === 0 ? 0 : 1);
