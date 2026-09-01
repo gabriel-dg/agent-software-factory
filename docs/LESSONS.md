@@ -260,11 +260,13 @@ the list, and they sum to 51%. The other 49% is unattributed. Accumulated
 orchestrator context is the hypothesis those numbers are consistent with,
 not a measurement, and the missing agent's share sits in the same 49%.
 
-Nine real bugs found by the pipeline, three of them invisible to a single
-session: an arithmetic error in the content, a false general claim presented
-as a law, and a visual state that did not exist until a browser rendered it.
-A human walkthrough afterwards, with all four verification layers reporting
-green, found four more.
+Nine real bugs found by the pipeline. Three of them are the kind this report
+originally described as invisible to a single session: an arithmetic error in
+the content, a false general claim presented as a law, and a visual state
+that did not exist until a browser rendered it. No control run was performed,
+so that description is an inference and not a measurement, and it should not
+be read as one. A human walkthrough afterwards, with all four verification
+layers reporting green, found four more.
 
 The count is one bug per defect in the shipped artifact or its spec that
 somebody had to go back and fix. The nine are the ones the pipeline's own

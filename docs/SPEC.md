@@ -1,6 +1,6 @@
 # SPEC.md — Monty Hall Interactive Explainer
 ### Pedagogical specification (learning-designer)
-### Revision 7: arithmetic and overclaim fixes (external review)
+### Revision 9: canonical §2b argument corrected to three-route partition (external review)
 
 This document defines the sequence of beats a reader moves through, what each
 beat must accomplish psychologically/pedagogically, and what interaction each
@@ -296,6 +296,42 @@ here. No beat was added, removed, or reordered, and no `_assert` value,
    now says the forced choice "is why switching has the edge over staying,"
    with the exact figure deferred to where it's actually proven.
 
+**Revision 8** is a documentation-only correction to §4: this document had
+drifted from `sim.js`'s actual exported signatures, restating
+`playRound`/`runTrials` without the `hostMode` parameter that both functions
+actually require, and carrying a stale caveat warning that no host-randomness
+parameter existed. `sim.js` was never wrong; this file was. Both signatures
+are corrected to include `hostMode` (`"knowing"|"random"`) in its real
+position, and the stale caveat is replaced with a statement of the actual
+contract. No beat, `_assert` value, or `copy.json` content changed. Full
+detail in §7.
+
+**Revision 9 (this one)** fixes a canonical-argument drift in §2b that a
+second external audit caught: §2b's "corrected argument" still presented
+"the player's own door has the car" and "the other closed door has the car"
+as **exactly two routes**, the two-route version that revision 4 through 7
+already superseded on the built page and in `copy.json`, where
+`whyYourDoorDoesntMove` has carried a three-route partition (adding the
+car-behind-the-opened-door route, joint probability 0) since revision 7.
+Revision 7's own changelog noted this gap and left it unfixed ("§2b's
+'exactly two routes' derivation only ever discussed Routes 1 and 2 and never
+characterized Route 3, so it required no change"); that was true of the
+narrow finding revision 7 was scoped to, but it left the canonical section
+stating an argument the shipped page no longer makes, which is exactly the
+kind of drift a downstream agent reading only §2b (not the changelog) would
+reproduce, and exactly the dropped-case shape a skeptic pass once flagged as
+the trick the page exists to disprove. §2b's corrected argument now states
+the three-route partition (car behind the player's door, car behind the
+other closed door, car behind the door that got opened, the last one zero
+because a knowing host is forbidden from opening the car's door) as the
+argument to reproduce, absorbing rather than replacing the two-route
+reasoning: the same 1/6, 2/6, and 1-to-2 ratio are still there, now sitting
+inside a partition that sums to 1 (well, to 1/2, the overall chance this
+specific door opens at all, with the two live routes and the zero route
+accounting for all of it) instead of silently omitting a third case. No
+beat, `_assert` value, or `copy.json` content changed; `copy.json` is
+explicitly out of scope for this round. Full itemized changelog in §7.
+
 ---
 
 ## 1. Audience and core failure mode
@@ -424,23 +460,46 @@ simply false 1/3 of the time and has been rewritten).
 in `mechanismContrast.threeCases.whyYourDoorDoesntMove`, and be referenced
 (not re-derived differently) everywhere else the claim recurs:
 
-Whichever specific door the host actually opens, there are exactly two
-routes by which that could have happened:
+Hold the player's pick fixed and condition on the one specific door the host
+actually opened. The partition is fixed across the whole argument, where is
+the car, and it has exactly three members, one per door. Two of the three
+routes carry weight; the third must still be stated, not dropped, because a
+skeptic who notices a missing case will (correctly) suspect the same
+dropped-case trick this page exists to disprove:
 
-- **Route 1 — the player had the car.** Prior odds 1/3. Given that, the host
-  still had to pick between two goat doors, and the fair coin sends him to
-  this exact one only half the time. Combined odds: 1/3 × 1/2 = **1/6**.
-- **Route 2 — the player had the other goat.** Prior odds 1/3. Given that,
-  the host had no choice — exactly one legal door, and it happened to be
-  this exact one. No coin flip to divide by, because there was no choice.
-  Combined odds: **1/3** (= 2/6).
+- **Route 1: the car is behind the player's own door.** Prior odds 1/3.
+  Given that, the host still had to pick between two goat doors, and the
+  fair coin sends him to this exact door only half the time. Joint
+  probability: 1/3 x 1/2 = **1/6**.
+- **Route 2: the car is behind the other closed door.** Prior odds 1/3.
+  Given that, the host had no choice, exactly one legal door, and it
+  happened to be this exact one. Joint probability: 1/3 x 1 = **1/3**. Note
+  this is a multiplication (1/3 x 1) followed by a separate unit conversion
+  to a common denominator with Route 1 (1/3 = 2/6); do not collapse the two
+  steps into "1/3 x 1 = 2/6," which states a true number as the answer to a
+  multiplication it is not the answer to.
+- **Route 3: the car is behind the door that actually got opened.** Prior
+  odds 1/3. Joint probability: **0**, because a host who knows where the car
+  is never opens the car's door, full stop; this is a direct consequence of
+  the host rule stated in Beat 1, not a special case invented for this
+  argument.
+
+The three joint probabilities are the whole partition and must sum to the
+overall chance this exact door gets opened at all: 1/6 + 2/6 + 0 = 3/6 =
+1/2. Dividing each route by that total gives the posteriors conditional on
+having seen exactly this door opened: 1/3 that the player's own door has the
+car, 2/3 that the other closed door does.
 
 Route 2 is twice as likely as Route 1, **no matter which specific door
-actually got opened** — the arithmetic is symmetric in "lower door opened"
-vs. "higher door opened" precisely because the coin is fair. That 1-to-2
-ratio is what makes the player's door 1/3 and the other closed door 2/3,
-*even conditional on having seen exactly which door opened* — which is the
-stronger, correct version of the claim revision 2 was reaching for.
+actually got opened** (the arithmetic is symmetric in "lower door opened" vs
+"higher door opened" precisely because the coin is fair). That 1-to-2 ratio
+between the two live routes is what makes the player's door 1/3 and the
+other closed door 2/3, *even conditional on having seen exactly which door
+opened*, which is the stronger, correct version of the claim revision 2 was
+reaching for. Route 3 contributes nothing to that ratio; its job in the
+argument is different, it is the case a dropped-case objection would point
+to, and it must be shown to come out to exactly zero for a stated reason (the
+host rule), not silently omitted.
 
 **Where the fairness is load-bearing, stated concretely:** if the coin were
 biased (e.g. always favors the lower-numbered door on a tie), Route 1 would
@@ -1066,6 +1125,86 @@ footer                  — closing credits/disclaimer, not a teaching beat
 ```
 
 ## 7. Revision log
+
+### Revision 9 (this round): §2b's canonical argument corrected to the three-route partition
+
+A second external audit found that §2b, the canonical statement of the
+"why doesn't my door's odds move" argument that downstream agents are told
+to reproduce and never re-derive differently, still presented **exactly two
+routes** ("the player had the car" and "the player had the other goat") as
+the full argument. That two-route version was superseded on the built page
+starting in revision 4 (which added a third, zero-probability route to both
+`copy.json` route tables) and corrected again in revision 7 (which fixed
+that third route's partition to be about the car's location, not the
+player's own door). Revision 7's changelog explicitly noted that §2b itself
+was never updated to match ("§2b's 'exactly two routes' derivation only ever
+discussed Routes 1 and 2 and never characterized Route 3, so it required no
+change") because that finding was scoped to `copy.json` only. Left as
+written, §2b told any downstream agent reading the spec rather than the
+changelog to rebuild the two-route version and drop the zero-probability
+case, which is the exact dropped-case shape a skeptic pass once flagged as
+the trick this page exists to disprove. `copy.json` was not touched this
+round; the fix is entirely within this file.
+
+1. **§2b's "corrected argument" now states the three-route partition.** The
+   partition (fixed across every route: where is the car) now has all three
+   members stated in the canonical text: Route 1, the car is behind the
+   player's own door, prior 1/3, joint 1/3 x 1/2 = 1/6; Route 2, the car is
+   behind the other closed door, prior 1/3, joint 1/3 x 1 = 1/3 (written as
+   2/6 on a common denominator, stated as a separate conversion step, not as
+   the answer to the multiplication itself, since "1/3 x 1 = 2/6" was one of
+   the errors revision 7 fixed in `copy.json` and must not be reintroduced
+   here); Route 3, the car is behind the door that got opened, prior 1/3,
+   joint 0, because a knowing host is forbidden from opening the car's door.
+   The three joints now sum openly to 3/6 = 1/2 (the overall chance this
+   specific door opens at all) instead of the old two-route total of 1/2
+   appearing without any stated reason it wasn't 1.
+2. **Everything still correct and load-bearing in the old text is preserved,
+   not replaced.** The false-general-law counterexample (a host who always
+   opens the lower-numbered goat door on a tie, still "certain either way"
+   yet leaking information through which door he opens) and the standing
+   ban on "an event that was going to happen either way can't be evidence"
+   are unchanged. The fair-coin tie-break as the missing load-bearing
+   assumption is unchanged. The 1-to-2 ratio between Routes 1 and 2, and why
+   it is symmetric across which specific door opened, is unchanged, now
+   stated explicitly as holding "between the two live routes" so it reads
+   correctly inside a three-route partition instead of implying only two
+   routes exist. The worked biased-host paragraph showing where fairness is
+   load-bearing is unchanged verbatim; it only ever reasoned about Routes 1
+   and 2, and Route 3 stays zero regardless of the tie-break policy, so
+   nothing in that paragraph needed to change.
+3. **Document header and top-of-document summary were out of date and are
+   fixed.** Line 3 read "Revision 7: arithmetic and overclaim fixes
+   (external review)" while this section already logged a Revision 8 (a
+   docs-only fix, landed after that header was last touched). The header now
+   reads "Revision 9: canonical §2b argument corrected to three-route
+   partition (external review)." The top-of-document summary block, which
+   had prose entries for revisions 2 through 7 but none for revision 8, now
+   has both a revision 8 summary and this revision's summary appended in
+   sequence, so the header and the top summary both match the newest entry
+   in this log.
+
+No beat was added, removed, or reordered. No `_assert` value, `expected`, or
+`tolerance` was changed; none of this round's changes touch a number a
+reader can check, they touch which cases the canonical prose states and in
+what order. `copy.json` was not opened, read for editing, or modified this
+round, per instruction.
+
+**Flag for the next review pass, not fixed here because it is outside this
+round's scope (§2b only) and outside this agent's remit (no code, no
+`copy.json` this round):** no other spot in `docs/SPEC.md` still states the
+two-route version as the argument to reproduce. §2a's three-case table
+partitions on the player's *pick* (car / Goat A / Goat B), not on the car's
+location conditional on a specific door opening, so it is a different,
+already-correct argument and was not touched. §6's key map and the revision
+4, 6, and 7 log entries already describe the three-route `copy.json`
+structure accurately and needed no change. The one open item is cosmetic,
+not argumentative: this file uses em dashes throughout in text this agent
+did not author this round (for example, in the revision 3 through 8 prose
+above), which predates the no-em-dash constraint that revision 5 applied to
+`copy.json` only; nothing written in this round introduces one, but a
+full-document em-dash sweep of the pre-existing prose was not performed,
+since it was not part of the two-route finding this round exists to fix.
 
 ### Revision 8 (this round): docs/SPEC.md corrected to match sim.js's actual `hostMode` parameter
 

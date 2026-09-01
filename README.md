@@ -1,34 +1,41 @@
 # Agent Software Factory
 
 **TL;DR:** This is a report on running an eight-agent Claude Code pipeline,
-with separate roles, exclusive file ownership, and independent verification,
-end to end to find out how a multi-agent build actually behaves in
+with separate roles, declared file ownership, and four scripted verification
+layers, end to end to find out how a multi-agent build actually behaves in
 practice, using a Monty Hall explainer as the test case. First full run:
 $31.81 API-equivalent, with only 51% of that usage attributed to named
-subagents and the other 49% not attributed to anything. Coordination
-overhead in the orchestrator's own context is the likeliest explanation,
-but the reported numbers do not establish it. That bought nine real bugs the
-pipeline caught, three of which no single-session build would have
-surfaced. A human walkthrough of the finished page afterwards found four
-more defects that all four verification layers had passed. To look
-further: open `index.html` for the page, read `CLAUDE.md` and
-`.claude/agents/` for the pipeline, read `docs/LESSONS.md` for the
-generalized rules.
+subagents and the other 49% not attributed to anything. The pipeline
+reported nine bugs. No control run was performed, so nothing here measures
+what a single session would have caught instead, and the repository holds no
+skeptic reports, FAIL logs or transcripts that evidence the nine
+independently. A human walkthrough afterwards, with all four layers
+reporting green, found four more defects. An independent model then audited
+the repository and concluded the approach is not worth its cost as
+implemented. That audit is published unedited in
+[docs/EXTERNAL-REVIEW.md](docs/EXTERNAL-REVIEW.md), and the findings it left
+standing are listed in the section introducing it. To look further: open
+`index.html` for the page, read `CLAUDE.md` and `.claude/agents/` for the
+pipeline, read `docs/LESSONS.md` for the generalized rules.
 
 [Open the live demo](https://gabriel-dg.github.io/agent-software-factory/) to try the built explainer in your browser, nothing to install.
 
 ## The experiment
 
-The question: does a role-separated agent team with independent
-verification catch things a single session does not, and what does that
-cost relative to one session doing the same work? Monty Hall was chosen as
-the test case because its answer is settled by simulation rather than
-opinion, so when two reviewers disagree, a script can decide it instead of
-an argument. The answer: yes, the pipeline caught real bugs a single pass
-plausibly would have missed, including three that needed a specific kind of
-cross-checking no single session performs. It cost several times what a
-single well-prompted session would have cost for a comparable page, and
-that is not a marginal overhead, it is the headline result.
+The question: does a role-separated agent team with scripted verification
+catch things a single session does not, and what does that cost relative to
+one session doing the same work? Monty Hall was chosen as the test case
+because its answer is settled by simulation rather than opinion, so when two
+reviewers disagree, a script can decide it instead of an argument.
+
+The answer is only half measured, and the half that is missing is the half
+the question turns on. The pipeline reported nine bugs and the cost is
+recorded below, but no control session was ever run, so the comparison was
+never made. Statements anywhere in this report about what a single session
+would or would not have caught are inferences, not findings. What is
+measured is the cost: several times what a single well-prompted session
+would plausibly have cost for a comparable page, and that is not a marginal
+overhead, it is the headline result.
 
 This repository contains the pipeline definition, [`CLAUDE.md`](CLAUDE.md)
 and the eight agent definitions in [`.claude/agents/`](.claude/agents/), and
@@ -135,7 +142,7 @@ anything for context without naming a specific input.
 | [learning-designer](.claude/agents/learning-designer.md) | sonnet | Read, Write, Edit | `docs/SPEC.md`, `copy.json` | Writes the pedagogical spec and every user-facing string. Decides what the page must teach and prove, not how it's built. |
 | [art-director](.claude/agents/art-director.md) | sonnet | Read, Write, Edit | `tokens.css`, `docs/DESIGN.md` | Defines the visual design system as CSS custom properties only, and documents every text/background contrast pair with a claimed ratio. |
 | [sim-engineer](.claude/agents/sim-engineer.md) | sonnet | Read, Write, Edit | `sim.js` | Writes the pure simulation logic (no DOM) that the page's claims are checked against. |
-| [math-verifier](.claude/agents/math-verifier.md) | haiku | Read, Write, Bash | `verification/test-sim.js`, `verification/check-contrast.js`, `verification/check-claims.js` | Runs three independent numeric checks and reports PASS/FAIL with raw numbers only. Never comments on style, wording, or code quality. |
+| [math-verifier](.claude/agents/math-verifier.md) | haiku | Read, Write, Bash | `verification/test-sim.js`, `verification/check-contrast.js`, `verification/check-claims.js` | Runs three scripted numeric checks and reports PASS/FAIL with raw numbers only. Never comments on style, wording, or code quality. |
 | [ui-engineer](.claude/agents/ui-engineer.md) | sonnet | Read, Write, Edit | `index.html`, `viz.js` | Builds the actual page and interactions from the spec, copy, tokens, and sim.js's exported functions. |
 | [qa-walker](.claude/agents/qa-walker.md) | sonnet | Read, Write, Bash | `tools/qa-walk.js` | Drives the built page in a real Chromium browser via Playwright and checks it against the spec's beat sequence. Read-only on the explainer itself. |
 | [skeptic](.claude/agents/skeptic.md) | opus | Read | nothing | Role-plays a reader convinced the odds are 50/50 and reports the exact sentence where the argument loses them. Read-only; suggests no code. |
@@ -251,8 +258,14 @@ or escalated to the human when a round limit is hit.
 
 ## Verification
 
-Four independent layers check different things and none of them substitutes
-for another. All commands run from the repo root.
+Four layers check different things, and no one of them substitutes for
+another. They are not independent of each other, and the external review was
+right about that: design-reviewer's ledger check duplicates qa-walker's by
+reading source instead of computed style, and the two contrast checks are
+complementary halves of one question rather than two views of it, since
+`check-contrast.js` asks only whether declared pairs meet WCAG while
+qa-walker asks only whether rendered pairs were declared. All commands run
+from the repo root.
 
 **1. Simulation correctness against analytic ground truth.**
 ```
@@ -301,10 +314,11 @@ untouched. The relationship is not even always equality:
 with `expected` 0.98, the complement. Both are correct, and a human has to
 know that to know they are.
 
-Coverage is partial, and nothing reports the gap. Counting strings that
-contain a fraction, an "N in N" or "N of N" phrase, or a percentage, 36
-strings in `copy.json` state a probability and 19 of them carry an
-assertion. The 17 that do not include all six route rows and both worked
+Coverage is partial, and since commit `6c916c3` the script measures and
+prints the gap on every run rather than leaving it unmeasured. Counting
+strings that contain a fraction, an "N in N" or "N of N" phrase, or a
+percentage, it reports that 36 strings in `copy.json` state a probability and
+19 of them carry an assertion. The 17 that do not include all six route rows and both worked
 divisions in the two `whyYourDoorDoesntMove` tables, which is to say every
 joint probability and the entire renormalization, the most mathematically
 load-bearing arithmetic on the page. None of it is checked by anything but
@@ -508,10 +522,11 @@ Open, and not addressed by any of the above:
 - skeptic has Read access only, so it reviews source and never the rendered
   page. The footer leak, the badge on the wrong doors, the 98-number dump and
   the unlinked URL were all invisible to it for that reason.
-- `check-claims.js` still never parses the sentence it is attached to, and the
+- `check-claims.js` still never parses the sentence it is attached to, so the
   numeric strings carrying no assertion, including every joint probability in
-  both route tables, remain unchecked. The Verification section now says so;
-  the script is unchanged.
+  both route tables, remain unchecked by anything but a human. Since commit
+  `6c916c3` the script at least measures and prints that gap on every run, so
+  it is no longer invisible, but measuring it is not closing it.
 - File ownership is a prompt instruction, not enforced by tooling. Agents with
   Bash could edit any file, and exclusive write is declared in the owner's
   prompt but not consistently in the other direction, which `LESSONS.md` calls
