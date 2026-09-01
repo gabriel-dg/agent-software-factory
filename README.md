@@ -549,10 +549,18 @@ asking for the underlying paths, never by accepting the agent's summary.
   end went through unflagged. The claim was disproved by running the parser
   against a renamed-headings copy, not by reading the report, and the gap it
   concealed needed a second, independent source for the beat list to close.
+- A live test of the ownership hook was reported as held when the hook had
+  not fired at all. The agent it was run against has no `Edit` tool, so the
+  call was rejected before tool dispatch and the hook was never reached. The
+  target file was indeed unmodified, which is what made the wrong conclusion
+  easy to draw: the observation was correct and the inference from it was
+  not. The test proved nothing about the hook and was re-run against a tool
+  the agent actually has. This one was the orchestrator's own report, not an
+  agent's.
 
-In this run, a verifying agent's own report of its work was wrong seven times,
-and each time it was caught by inspecting the artifact rather than the
-report.
+In this run, a report of verification work was wrong eight times: seven were
+an agent's own account of what it had done, and one was the orchestrator's.
+Each was caught by inspecting the artifact rather than the report.
 
 ## The external review
 
@@ -603,10 +611,15 @@ Open, and not addressed by any of the above:
   both route tables, remain unchecked by anything but a human. Since commit
   `6c916c3` the script at least measures and prints that gap on every run, so
   it is no longer invisible, but measuring it is not closing it.
-- File ownership is a prompt instruction, not enforced by tooling. Agents with
-  Bash could edit any file, and exclusive write is declared in the owner's
-  prompt but not consistently in the other direction, which `LESSONS.md` calls
-  mandatory.
+- File ownership was a prompt instruction enforced by nothing. It is now
+  checked by `tools/check-ownership.js`, wired as a `PreToolUse` hook and
+  required after every writer returns, and every writer's prohibitions list
+  the other agents' files as explicit paths in both directions. This is
+  narrowed rather than closed: the hook only sees tools carrying an explicit
+  file path, so an agent with Bash still writes any path unchecked, which was
+  confirmed by test rather than assumed. `math-verifier` and `qa-walker` have
+  Bash. A bypass is treated as a pipeline failure rather than a valid edit,
+  which is a policy, not an enforcement.
 - The nine-bug claim has no evidence in this repository: no skeptic reports,
   no FAIL logs, no transcripts, no per-bug commits, with the whole pipeline in
   one commit.
@@ -625,6 +638,19 @@ Open, and not addressed by any of the above:
   job includes a mechanical style pass.
 - Beat 3's length, the 500-round sample in the mechanism contrast, and the
   closing beat reopening the biased-host objection.
+- `qa-walk.js`'s Beat 2 check drives the round through a probabilistic retry
+  loop, needing both a car-pick and a goat-pick within a fixed number of
+  attempts. It can exhaust them and fail a run in which nothing is wrong with
+  the page. With `maxAttempts` at 15 and a car-pick probability of 1/3, that
+  is `(2/3)^15`, about one run in 438. It happened once during this work, and
+  re-running passed. A verification layer that fails on its own sampling
+  is a layer whose FAIL cannot be read at face value, which is the property
+  the rest of this section is about.
+- The `gutCheckFinal` copy key has exactly one assertion in `qa-walk.js`. That
+  is the thinnest coverage on the page, and it is on Beat 9, the beat that
+  closes the argument and asks the reader whether they changed their mind. It
+  satisfies the beat-to-walker presence check, which is presence only and by
+  design says nothing about how thoroughly a beat is tested.
 
 ## What it cost
 
