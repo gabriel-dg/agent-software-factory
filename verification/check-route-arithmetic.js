@@ -229,6 +229,51 @@ function verifyWorked(d, exp) {
   return r;
 }
 
+function reportKey(k, e, rs) {
+  // Determine verdicts across all equations for this key
+  let internalConsistency = true, tableAgreement = true;
+  let failMessages = [];
+
+  if (!rs.length) {
+    return {
+      line: 'FAIL ' + k + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | NO EQUATIONS',
+      pass: false
+    };
+  }
+
+  for (const r of rs) {
+    if (r.error) {
+      internalConsistency = false;
+      tableAgreement = false;
+      failMessages.push('PARSE: ' + r.error);
+    } else {
+      if (!r.internalOk) {
+        internalConsistency = false;
+        failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
+      }
+      if (!r.tableOk) {
+        tableAgreement = false;
+        failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
+      }
+    }
+  }
+
+  const bothPass = internalConsistency && tableAgreement;
+  const verdict = bothPass ? 'PASS' : 'FAIL';
+  const internalStr = internalConsistency ? 'PASS' : 'FAIL';
+  const tableStr = tableAgreement ? 'PASS' : 'FAIL';
+
+  let line = verdict + ' ' + k + ' | INTERNAL CONSISTENCY ' + internalStr + ' | TABLE AGREEMENT ' + tableStr;
+  if (failMessages.length) {
+    line += ' | ' + failMessages.join(' | ');
+  }
+
+  return {
+    line: line,
+    pass: bothPass
+  };
+}
+
 let pass = 0, fail = 0, results = [], missing = [];
 try {
   const w = copyJson.mechanismContrast?.threeCases?.whyYourDoorDoesntMove;
@@ -238,94 +283,78 @@ try {
 
   for (let i = 0; i < 3; i++) {
     const k = 'knowingHost.routes[' + i + '].detail', e = expectedTable[k];
-    if (!kh.routes?.[i]?.detail) { results.push('FAIL ' + k + ' | KEY NOT FOUND'); missing.push(k); fail++; continue; }
+    if (!kh.routes?.[i]?.detail) {
+      results.push('FAIL ' + k + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | KEY NOT FOUND');
+      missing.push(k);
+      fail++;
+      continue;
+    }
     try {
       const rs = verifyDetail(kh.routes[i].detail, e);
-      if (!rs.length) { results.push('FAIL ' + k + ' | NO EQUATIONS'); fail++; continue; }
-      let good = true;
-      for (const r of rs) {
-        if (r.error) { results.push('FAIL ' + k + ' | PARSE: ' + r.error); good = false; fail++; }
-        else if (!r.internalOk || !r.tableOk) {
-          let failMessages = [];
-          if (!r.internalOk) failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
-          if (!r.tableOk) failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
-          results.push('FAIL ' + k + ' | ' + failMessages.join(' | '));
-          good = false;
-          fail++;
-        }
-      }
-      if (good) { results.push('PASS ' + k); pass++; }
-    } catch (er) { results.push('FAIL ' + k + ' | ERROR: ' + er.message); fail++; }
+      const report = reportKey(k, e, rs);
+      results.push(report.line);
+      if (report.pass) pass++;
+      else fail++;
+    } catch (er) {
+      results.push('FAIL ' + k + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | ERROR: ' + er.message);
+      fail++;
+    }
   }
 
   const k0 = 'knowingHost.workedDivision', e0 = expectedTable[k0];
-  if (!kh.workedDivision) { results.push('FAIL ' + k0 + ' | KEY NOT FOUND'); missing.push(k0); fail++; }
-  else {
+  if (!kh.workedDivision) {
+    results.push('FAIL ' + k0 + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | KEY NOT FOUND');
+    missing.push(k0);
+    fail++;
+  } else {
     try {
       const rs = verifyWorked(kh.workedDivision, e0);
-      if (!rs.length) { results.push('FAIL ' + k0 + ' | NO EQUATIONS'); fail++; }
-      else {
-        let good = true;
-        for (const r of rs) {
-          if (r.error) { results.push('FAIL ' + k0 + ' | PARSE: ' + r.error); good = false; fail++; }
-          else if (!r.internalOk || !r.tableOk) {
-            let failMessages = [];
-            if (!r.internalOk) failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
-            if (!r.tableOk) failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e0.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
-            results.push('FAIL ' + k0 + ' | ' + failMessages.join(' | '));
-            good = false;
-            fail++;
-          }
-        }
-        if (good) { results.push('PASS ' + k0); pass++; }
-      }
-    } catch (er) { results.push('FAIL ' + k0 + ' | ERROR: ' + er.message); fail++; }
+      const report = reportKey(k0, e0, rs);
+      results.push(report.line);
+      if (report.pass) pass++;
+      else fail++;
+    } catch (er) {
+      results.push('FAIL ' + k0 + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | ERROR: ' + er.message);
+      fail++;
+    }
   }
 
   for (let i = 0; i < 3; i++) {
     const k = 'randomHost.routes[' + i + '].detail', e = expectedTable[k];
-    if (!rh.routes?.[i]?.detail) { results.push('FAIL ' + k + ' | KEY NOT FOUND'); missing.push(k); fail++; continue; }
+    if (!rh.routes?.[i]?.detail) {
+      results.push('FAIL ' + k + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | KEY NOT FOUND');
+      missing.push(k);
+      fail++;
+      continue;
+    }
     try {
       const rs = verifyDetail(rh.routes[i].detail, e);
-      if (!rs.length) { results.push('FAIL ' + k + ' | NO EQUATIONS'); fail++; continue; }
-      let good = true;
-      for (const r of rs) {
-        if (r.error) { results.push('FAIL ' + k + ' | PARSE: ' + r.error); good = false; fail++; }
-        else if (!r.internalOk || !r.tableOk) {
-          let failMessages = [];
-          if (!r.internalOk) failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
-          if (!r.tableOk) failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
-          results.push('FAIL ' + k + ' | ' + failMessages.join(' | '));
-          good = false;
-          fail++;
-        }
-      }
-      if (good) { results.push('PASS ' + k); pass++; }
-    } catch (er) { results.push('FAIL ' + k + ' | ERROR: ' + er.message); fail++; }
+      const report = reportKey(k, e, rs);
+      results.push(report.line);
+      if (report.pass) pass++;
+      else fail++;
+    } catch (er) {
+      results.push('FAIL ' + k + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | ERROR: ' + er.message);
+      fail++;
+    }
   }
 
   const k2 = 'randomHost.workedDivision', e2 = expectedTable[k2];
-  if (!rh.workedDivision) { results.push('FAIL ' + k2 + ' | KEY NOT FOUND'); missing.push(k2); fail++; }
-  else {
+  if (!rh.workedDivision) {
+    results.push('FAIL ' + k2 + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | KEY NOT FOUND');
+    missing.push(k2);
+    fail++;
+  } else {
     try {
       const rs = verifyWorked(rh.workedDivision, e2);
-      if (!rs.length) { results.push('FAIL ' + k2 + ' | NO EQUATIONS'); fail++; }
-      else {
-        let good = true;
-        for (const r of rs) {
-          if (r.error) { results.push('FAIL ' + k2 + ' | PARSE: ' + r.error); good = false; fail++; }
-          else if (!r.internalOk || !r.tableOk) {
-            let failMessages = [];
-            if (!r.internalOk) failMessages.push('INTERNAL CONSISTENCY FAIL: "' + r.equation + '" computes to ' + r.computed.toString() + ' but states ' + r.statedValue.toString());
-            if (!r.tableOk) failMessages.push('TABLE AGREEMENT FAIL: "' + r.equation + '" literal [' + r.statedLiteral[0] + ', ' + r.statedLiteral[1] + '] not in [' + e2.map(v => '[' + v[0] + ', ' + v[1] + ']').join(', ') + ']');
-            results.push('FAIL ' + k2 + ' | ' + failMessages.join(' | '));
-            good = false;
-            fail++;
-          }
-        }
-        if (good) { results.push('PASS ' + k2); pass++; }
-      }
-    } catch (er) { results.push('FAIL ' + k2 + ' | ERROR: ' + er.message); fail++; }
+      const report = reportKey(k2, e2, rs);
+      results.push(report.line);
+      if (report.pass) pass++;
+      else fail++;
+    } catch (er) {
+      results.push('FAIL ' + k2 + ' | INTERNAL CONSISTENCY FAIL | TABLE AGREEMENT FAIL | ERROR: ' + er.message);
+      fail++;
+    }
   }
 } catch (err) { console.log('FAIL: ' + err.message); process.exit(1); }
 

@@ -119,8 +119,8 @@ for (let i = 0; i < mutations.length; i++) {
     // Script exited non-zero — check if this is expected
     if (mutation.expectTableFail) {
       // For mutation j, we expect it to fail on table agreement
-      // Check the output to verify it's a TABLE MISMATCH failure
-      if (err.stdout && err.stdout.includes('TABLE MISMATCH')) {
+      // Check the output to verify it's a TABLE AGREEMENT FAIL failure
+      if (err.stdout && err.stdout.includes('TABLE AGREEMENT FAIL')) {
         console.log(`PASS ${mutation.name} | Correctly failed table agreement (PASS internal + FAIL table)`);
         sabotagePassCount++;
       } else {
