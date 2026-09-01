@@ -1,6 +1,6 @@
 # SPEC.md — Monty Hall Interactive Explainer
 ### Pedagogical specification (learning-designer)
-### Revision 9: canonical §2b argument corrected to three-route partition (external review)
+### Revision 10: load-state visibility contract plus §6 key-map fix (QA census)
 
 This document defines the sequence of beats a reader moves through, what each
 beat must accomplish psychologically/pedagogically, and what interaction each
@@ -331,6 +331,32 @@ specific door opens at all, with the two live routes and the zero route
 accounting for all of it) instead of silently omitting a third case. No
 beat, `_assert` value, or `copy.json` content changed; `copy.json` is
 explicitly out of scope for this round. Full itemized changelog in §7.
+
+**Revision 10 (this round)** is the load-state visibility contract plus the
+§6 key-map fix, both prompted by the same QA census of what is actually
+rendered on the built page. First, a human found that `<footer
+id="site-footer">` was never gated by this spec at all: every teaching beat
+is deliberately hidden until the reader unlocks it, but nothing here ever
+said the footer had to follow that rule, so it rendered immediately under
+the opening poll and the reader saw the host-knowledge rule and the
+colophon before answering Beat 0's question. That bug is already fixed in
+`index.html`; this revision's job is to make the class of defect
+mechanically checkable going forward, not to describe a live bug. A new,
+deliberately unnumbered "Visible at t=0" section (placed between §4 and
+§5, so the existing numbered cross-references to §5/§6/§7 elsewhere in this
+document keep pointing at the right sections) now states exactly which
+top-level regions are visible on load and which are not, in a format
+`tools/qa-walk.js` parses mechanically, so a future regression of this exact
+shape fails automatically instead of waiting for a human to notice. Second,
+the same census found that §6's copy.json key map listed 13 top-level keys
+where the real file has 14: `colophon` (the credits/meta paragraph about how
+the page itself was produced, rendered into `#colophon-text` inside the
+footer) was never in the map. This is the identical omission shape as the
+footer finding, a real thing on the page this spec never mentioned, and is
+fixed by adding it to §6 in its correct position. No beat was added,
+removed, or reordered; no copy key's content changed; `copy.json` was not
+opened or modified this round; no `_assert`, `expected`, or `tolerance`
+value was touched. Full detail in §7.
 
 ---
 
@@ -1046,6 +1072,71 @@ and ui-engineer own how these are implemented against `sim.js`'s
    toward 50/50" interpretation copy was shortened on the assumption this
    exists.
 
+## Visible at t=0
+
+(This section is deliberately unnumbered, not a renumbering of what follows.
+§5, §6, and §7 keep their existing numbers, and every cross-reference to them
+elsewhere in this document, "see §5," "§6's key map," and so on, stays
+correct. Do not renumber this section into the sequence and do not shift §5/
+§6/§7 to make room for it.)
+
+"t=0" means the instant the page has finished loading and the reader has not
+yet clicked, scrolled past a trigger, or interacted in any way. Every beat in
+§3 is designed to be revealed only when its trigger fires, `.beat.locked`
+gating each one until then, so what is actually visible at t=0 is a short,
+fixed list, and this section states that list explicitly so it is
+mechanically checkable rather than only implied by the beat sequence.
+
+This section exists because that check had a hole: a human found that
+`<footer id="site-footer">` was never gated by anything in this spec, so it
+rendered directly under the opening poll and the reader saw the
+host-knowledge rule and the colophon before answering Beat 0's question. The
+root cause was that the footer was never named in this document at all, so
+`tools/qa-walk.js`'s "nothing visible before its trigger" check had no entry
+to check it against. That bug is already fixed in `index.html`; this section
+exists so the class of defect (a real, rendered region this spec never
+mentions) is caught mechanically next time, not to describe a live bug.
+
+`tools/qa-walk.js` parses the two subsections below mechanically, so their
+format is a contract. Both lists name TOP-LEVEL regions only. An element
+nested inside a listed region is covered by its ancestor and must not also be
+listed here; the checker resolves every visible element up to its nearest
+listed ancestor. In particular, the ids `viz.js` injects inside Beat 0 at
+render time (`#gutcheck0-options` and `#gutcheck0-confirm`) are deliberately
+not listed below, since they are ui-engineer's implementation detail and
+naming them here would couple this spec to `viz.js`'s internal id choices;
+they are covered by `#beat-gutcheck0`.
+
+### Visible on load
+
+- `#meta-title` — the page's main title
+- `#meta-subtitle` — the page's subtitle, directly under the title
+- `#meta-intro` — the short problem-statement intro copy that precedes Beat 0
+- `#beat-gutcheck0` — Beat 0, the cold-open gut-check poll; the only beat
+  unlocked on load
+
+### Not visible on load
+
+- `#site-footer` — unlocked only by the final gut-check confirm handler in
+  Beat 9
+- `#beat-rules`
+- `#beat-round3`
+- `#beat-mechanism`
+- `#beat-agg3`
+- `#beat-round100`
+- `#beat-agg100`
+- `#beat-bridge`
+- `#beat-faq`
+- `#beat-recap`
+
+The nine locked beat ids above are listed for explicitness even though they
+are also implied by the beat sequence in §3; the checker asserts each of them
+is genuinely not visible at load, not merely absent from a summary.
+
+If a future build intentionally changes what is visible on load, this list
+is the thing that must change, and `tools/qa-walk.js` will fail until it
+does.
+
 ## 5. What must not happen
 
 - The host's door-opening must never be described or implied as random
@@ -1122,9 +1213,57 @@ faq                     — Beat 8
 recap                   — Beat 9 (part 1)
 gutCheckFinal           — Beat 9 (part 2)
 footer                  — closing credits/disclaimer, not a teaching beat
+colophon                — credits/meta paragraph on how the page itself was
+                        produced, including the repository URL (auto-
+                        linkified by viz.js); renders into #colophon-text
+                        inside the footer; like footer, not a teaching beat
 ```
 
 ## 7. Revision log
+
+### Revision 10 (this round): load-state visibility contract, plus §6's missing `colophon` key
+
+A QA census of what the built page actually renders, versus what this
+document says should render, found two omissions of the identical shape: a
+real, rendered thing on the page that this spec never named. No beat was
+added, removed, or reordered; no copy key's content changed; `copy.json` was
+not opened or modified this round; no `_assert`, `expected`, or `tolerance`
+value was touched.
+
+1. **New, deliberately unnumbered "Visible at t=0" section, added between §4
+   and §5.** A human found that `<footer id="site-footer">` was never gated
+   by anything in this spec: every teaching beat in §3 is designed to stay
+   locked until its trigger fires, but the footer had no such gating stated
+   anywhere here, so it rendered directly under the opening poll and the
+   reader saw the host-knowledge rule and the colophon before answering
+   Beat 0's question. The root cause was that the footer was never in this
+   spec at all, so `tools/qa-walk.js`'s "nothing visible before its trigger"
+   check had no entry for it to check. That bug is already fixed in
+   `index.html`; the new section exists so the class of defect is
+   mechanically checkable in future, not to describe a live bug. The section
+   states, in a format `tools/qa-walk.js` parses mechanically, exactly which
+   top-level regions are visible on load (`#meta-title`, `#meta-subtitle`,
+   `#meta-intro`, and `#beat-gutcheck0`, the only unlocked beat) and which
+   are not (`#site-footer` and the nine other locked beat ids). It is left
+   unnumbered, and says so explicitly inside itself, precisely so the many
+   existing numbered cross-references elsewhere in this document ("see §5,"
+   "§6's key map," and similar) keep pointing at the same sections as
+   before; §5, §6, and §7 are not renumbered.
+2. **§6's key map was missing `colophon`, the same omission shape as the
+   footer.** The same census that found the footer gap found that §6 listed
+   13 top-level `copy.json` keys where the real file has 14. `colophon`
+   (verified against the real file's top-level key order: `meta`,
+   `gutCheckInitial`, `rules`, `round3`, `mechanismContrast`,
+   `aggregateStats3`, `round100`, `aggregateStats100`, `bridgeBack`, `faq`,
+   `recap`, `gutCheckFinal`, `footer`, `colophon`) is the credits/meta
+   paragraph about how the page itself was produced, contains the repository
+   URL that `viz.js` auto-linkifies, and renders into `#colophon-text` inside
+   the footer; like `footer`, it is not a teaching beat. Added to §6 in its
+   correct position, directly after `footer`.
+
+Header line and top-of-document summary block updated to Revision 10 per the
+convention Revision 9's entry established (point 3, below): both must name
+the newest revision.
 
 ### Revision 9 (this round): §2b's canonical argument corrected to the three-route partition
 

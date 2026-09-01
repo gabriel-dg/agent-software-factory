@@ -79,6 +79,7 @@ const SHOTS_DIR = path.join(__dirname, "shots");
 const PAGE_URL = pathToFileURL(path.join(REPO_ROOT, "index.html")).href;
 const TOKENS_CSS_PATH = path.join(REPO_ROOT, "tokens.css");
 const DESIGN_MD_PATH = path.join(REPO_ROOT, "docs", "DESIGN.md");
+const SPEC_MD_PATH = path.join(REPO_ROOT, "docs", "SPEC.md");
 const DEFAULT_TIMEOUT = 8000;
 
 if (!fs.existsSync(SHOTS_DIR)) fs.mkdirSync(SHOTS_DIR, { recursive: true });
@@ -265,6 +266,236 @@ function parseLedgerPairs(designMdText) {
   let m;
   while ((m = re.exec(designMdText))) {
     pairs.push([m[1], m[2]]);
+  }
+  return pairs;
+}
+
+// -----------------------------------------------------------------------
+// SPEC.md "Visible at t=0" contract (Revision 10) parsing + DOM check.
+// Parsed straight from docs/SPEC.md, never hardcoded, so a future edit to
+// the contract's id lists is picked up automatically and a future removal
+// of the contract itself is caught by the HARD REQUIREMENT below rather
+// than silently no-op'ing.
+//
+// Line-based, not a single regex with a "$"-in-lookahead shortcut: SPEC.md
+// puts a blank line between each "### ..." heading and its list, and a
+// multiline "$" matches zero-width right before ANY "\n" (including that
+// blank line's own), so a "(?=\n### |$)" lookahead was found (during this
+// check's own development) to terminate the captured subsection after zero
+// characters, right on that blank line, silently yielding an empty list.
+// Scanning line-by-line for the next "### "/"## " heading avoids that trap.
+// -----------------------------------------------------------------------
+function parseVisibleAtT0(specText) {
+  const lines = specText.split("\n");
+  const h2Idx = lines.findIndex((l) => l.trim() === "## Visible at t=0");
+  if (h2Idx === -1) return { visible: [], notVisible: [], ok: false };
+
+  let sectionEnd = lines.length;
+  for (let i = h2Idx + 1; i < lines.length; i++) {
+    if (/^## /.test(lines[i])) {
+      sectionEnd = i;
+      break;
+    }
+  }
+  const sectionLines = lines.slice(h2Idx + 1, sectionEnd);
+
+  function extractSubsection(heading) {
+    const startIdx = sectionLines.findIndex((l) => l.trim() === heading);
+    if (startIdx === -1) return null;
+    let endIdx = sectionLines.length;
+    for (let i = startIdx + 1; i < sectionLines.length; i++) {
+      if (/^### /.test(sectionLines[i]) || /^## /.test(sectionLines[i])) {
+        endIdx = i;
+        break;
+      }
+    }
+    return sectionLines.slice(startIdx + 1, endIdx);
+  }
+
+  function extractIds(subLines) {
+    if (!subLines) return [];
+    const ids = [];
+    const re = /^- `#([A-Za-z0-9_-]+)`/;
+    for (const l of subLines) {
+      const m = l.match(re);
+      if (m) ids.push(m[1]);
+    }
+    return ids;
+  }
+
+  const visible = extractIds(extractSubsection("### Visible on load"));
+  const notVisible = extractIds(extractSubsection("### Not visible on load"));
+  // HARD REQUIREMENT: an empty "visible" list means nothing was actually
+  // parsed (missing section/subsection, or a genuinely vacuous contract),
+  // which must FAIL rather than vacuously pass -- see the call site. Note
+  // this intentionally does not also require notVisible.length > 0; only
+  // an empty "visible" list is specified as the hard-failure trigger.
+  return { visible, notVisible, ok: visible.length > 0 };
+}
+
+// Walks <main> and <footer> (excluding those two container elements
+// themselves) and: (A) for every element that is genuinely visible right
+// now, resolves it up its ancestor chain to the nearest ancestor whose id
+// is in specVisible (an element that is itself listed resolves to itself);
+// unresolved elements are reported by tag/id/class/text so the offending
+// element is unambiguous. (B) checks every specVisible id is present and
+// visible. (C) checks every specNotVisible id is present and NOT visible.
+// Visibility definition matches the task spec exactly: a layout box
+// (offsetParent !== null || getClientRects().length > 0) AND, for the
+// element and every ancestor up to and including body, display !== "none",
+// visibility !== "hidden", and opacity !== "0" (literal per-ancestor check,
+// not a multiplied/cumulative opacity).
+async function checkVisibleAtT0(page, specVisible, specNotVisible) {
+  return page.evaluate(
+    ({ specVisible, specNotVisible }) => {
+      function isVisible(el) {
+        const hasBox = el.offsetParent !== null || el.getClientRects().length > 0;
+        if (!hasBox) return false;
+        let node = el;
+        while (node && node.nodeType === 1) {
+          const cs = getComputedStyle(node);
+          if (cs.display === "none" || cs.visibility === "hidden" || cs.opacity === "0") return false;
+          if (node === document.body) break;
+          node = node.parentElement;
+        }
+        return true;
+      }
+
+      function resolveNearestListed(el, listedIds) {
+        let node = el;
+        while (node && node.nodeType === 1) {
+          if (node.id && listedIds.has(node.id)) return node.id;
+          node = node.parentElement;
+        }
+        return null;
+      }
+
+      const listedIds = new Set(specVisible);
+      const unresolved = [];
+      const roots = [];
+      const mainEl = document.querySelector("main");
+      const footerEl = document.querySelector("footer");
+      if (mainEl) roots.push(mainEl);
+      if (footerEl) roots.push(footerEl);
+
+      roots.forEach((root) => {
+        root.querySelectorAll("*").forEach((el) => {
+          if (!isVisible(el)) return;
+          const resolved = resolveNearestListed(el, listedIds);
+          if (!resolved) {
+            unresolved.push({
+              tag: el.tagName.toLowerCase(),
+              id: el.id || null,
+              className: el.className && typeof el.className === "string" ? el.className : null,
+              text: (el.textContent || "").trim().slice(0, 80)
+            });
+          }
+        });
+      });
+
+      const visibleFailures = [];
+      specVisible.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) visibleFailures.push({ id, reason: "missing from DOM" });
+        else if (!isVisible(el)) visibleFailures.push({ id, reason: "present but not visible" });
+      });
+
+      const notVisibleFailures = [];
+      specNotVisible.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) notVisibleFailures.push({ id, reason: "missing from DOM" });
+        else if (isVisible(el)) notVisibleFailures.push({ id, reason: "present and visible" });
+      });
+
+      return { unresolved, visibleFailures, notVisibleFailures };
+    },
+    { specVisible, specNotVisible }
+  );
+}
+
+// -----------------------------------------------------------------------
+// Every "### Beat N" heading in docs/SPEC.md is immediately followed by a
+// "**copy key:** `x`" or "**copy keys:** `x`, `y`" line; this collects,
+// per beat, every backticked key on that line, handling both the singular
+// and plural forms.
+// -----------------------------------------------------------------------
+function parseBeatCopyKeys(specText) {
+  const lines = specText.split("\n");
+  const beats = [];
+  for (let i = 0; i < lines.length; i++) {
+    const headingMatch = lines[i].match(/^### Beat (\d+)/);
+    if (!headingMatch) continue;
+    const nextLine = lines[i + 1] || "";
+    const keyLineMatch = nextLine.match(/\*\*copy keys?:\*\*\s*(.+)/);
+    const keys = [];
+    if (keyLineMatch) {
+      const keyRe = /`([^`]+)`/g;
+      let km;
+      while ((km = keyRe.exec(keyLineMatch[1]))) keys.push(km[1]);
+    }
+    beats.push({ beatNum: headingMatch[1], keys, headingLine: lines[i].trim() });
+  }
+  return beats;
+}
+
+// -----------------------------------------------------------------------
+// SPEC.md §6 "copy.json key map" parsing -- the SECOND, INDEPENDENT source
+// used to cross-check the beat list parsed from §3's "### Beat N" headings
+// (parseBeatCopyKeys above). §3 alone, checked only for contiguity-from-zero,
+// cannot detect TAIL TRUNCATION: renaming "### Beat 7" through "### Beat 9"
+// to something else still leaves a contiguous [0..6] parse from §3, which
+// passes the contiguity guard even though beats 7-9 silently stopped being
+// checked. §6's key map is beat-annotated independently of §3's headings, so
+// a key genuinely orphaned by a §3 heading rename still shows up here and the
+// disagreement between the two sources surfaces the truncation.
+//
+// Parses ONLY the fenced code block immediately under the
+// "## 6. copy.json key map" heading, and within it, ONLY lines that:
+//   - start at column 0 (no leading whitespace) with a key,
+//   - followed by whitespace, an em dash —, whitespace, and a description.
+// Continuation lines in that fenced block are indented and so never match
+// "^(\\S+)" at position 0 -- they are correctly skipped without any special
+// case. Within the description, only a literal, capitalized "Beat <digits>"
+// counts as a beat attribution: entries with no such marker (meta, footer,
+// colophon) are correctly excluded, including "footer" and "colophon" whose
+// descriptions contain the lowercase word "beat" in "not a teaching beat" --
+// the case-sensitive "Beat" requirement means those never match.
+// -----------------------------------------------------------------------
+function parseCopyJsonKeyMap(specText) {
+  const lines = specText.split("\n");
+  const headingIdx = lines.findIndex((l) => l.trim() === "## 6. copy.json key map");
+  if (headingIdx === -1) return [];
+
+  let fenceStart = -1;
+  for (let i = headingIdx + 1; i < lines.length; i++) {
+    if (lines[i].trim() === "```") {
+      fenceStart = i;
+      break;
+    }
+  }
+  if (fenceStart === -1) return [];
+
+  let fenceEnd = -1;
+  for (let i = fenceStart + 1; i < lines.length; i++) {
+    if (lines[i].trim() === "```") {
+      fenceEnd = i;
+      break;
+    }
+  }
+  if (fenceEnd === -1) return [];
+
+  const blockLines = lines.slice(fenceStart + 1, fenceEnd);
+  const lineRe = /^(\S+)[ \t]+\u2014[ \t]+(.+)$/;
+  const beatRe = /\bBeat (\d+)\b/;
+  const pairs = [];
+  for (const line of blockLines) {
+    const lm = line.match(lineRe);
+    if (!lm) continue; // indented continuation line, or no em-dash line at all
+    const key = lm[1];
+    const desc = lm[2];
+    const bm = desc.match(beatRe);
+    if (!bm) continue; // meta / footer / colophon -- no "Beat <digits>" marker
+    pairs.push({ key, beatNum: parseInt(bm[1], 10) });
   }
   return pairs;
 }
@@ -850,6 +1081,70 @@ async function main() {
   await assertNotVisible(page, "#colophon-text", "load", "colophon.text");
 
   await checkNoPlaceholders(page, "load");
+
+  // =========================================================================
+  // Check 1: bidirectional t=0 visibility check against docs/SPEC.md's
+  // "## Visible at t=0" contract (Revision 10). Runs before Beat 0's first
+  // interaction (the poll); additional to, and does not replace or refactor,
+  // the existing lockedAtLoad loop and assertNotVisible footer calls above.
+  // =========================================================================
+  const specText = fs.readFileSync(SPEC_MD_PATH, "utf8");
+  const t0Spec = parseVisibleAtT0(specText);
+  if (!t0Spec.ok) {
+    // HARD REQUIREMENT: a missing section/subsection, or an empty "visible"
+    // list, is itself a FAIL. A check that silently parsed nothing and then
+    // passed vacuously is the exact failure mode this check exists to catch.
+    fail(
+      "load-t0-contract",
+      "docs/SPEC.md ## Visible at t=0",
+      "a parseable 'Visible at t=0' section with non-empty '### Visible on load' and '### Not visible on load' subsections",
+      `parsed visible=${JSON.stringify(t0Spec.visible)}, notVisible=${JSON.stringify(t0Spec.notVisible)}`,
+      await shot(page, "FAIL-load-t0-contract-unparseable.png")
+    );
+  } else {
+    const t0Result = await checkVisibleAtT0(page, t0Spec.visible, t0Spec.notVisible);
+
+    // Direction A: nothing visible at t=0 inside <main>/<footer> that SPEC's
+    // "Visible on load" list does not account for, rolled up to the nearest
+    // listed ancestor (ids not on the list are transparent to the walk).
+    const seenA = new Set();
+    for (const el of t0Result.unresolved) {
+      const sig = `${el.tag}#${el.id}.${el.className}::${el.text}`;
+      if (seenA.has(sig)) continue;
+      seenA.add(sig);
+      fail(
+        "load-t0-direction-A",
+        el.id ? `#${el.id}` : `<${el.tag}>`,
+        "every visible element at t=0 inside <main>/<footer> resolves (by walking up to the nearest ancestor id) to an id in SPEC's '### Visible on load' list",
+        `unlisted visible element: <${el.tag}${el.id ? ` id="${el.id}"` : ""}${el.className ? ` class="${el.className}"` : ""}> text: "${el.text}"`,
+        await shot(page, "FAIL-load-t0-direction-A-unlisted-visible.png")
+      );
+    }
+
+    // Direction B: everything SPEC lists as visible on load actually is.
+    for (const f of t0Result.visibleFailures) {
+      fail(
+        "load-t0-direction-B",
+        `#${f.id}`,
+        "listed in SPEC's '### Visible on load' and actually visible at t=0",
+        f.reason,
+        await shot(page, `FAIL-load-t0-direction-B-${f.id}.png`)
+      );
+    }
+
+    // Direction C: everything SPEC lists as NOT visible on load actually
+    // isn't (this is what encodes the previously-ungated footer by name).
+    for (const f of t0Result.notVisibleFailures) {
+      fail(
+        "load-t0-direction-C",
+        `#${f.id}`,
+        "listed in SPEC's '### Not visible on load' and actually not visible at t=0",
+        f.reason,
+        await shot(page, `FAIL-load-t0-direction-C-${f.id}.png`)
+      );
+    }
+  }
+
 
   // =======================================================================
   // Beat 0 — gut-check poll (initial)
@@ -1918,6 +2213,153 @@ async function main() {
       await checkHoverPair(page, "#agg3-buttons button", "btn-secondary", rgbToTokens, allowedPairSet, ledgerMismatches);
     } catch (e) {
       fail("ledger-check-hover", "hover state checks", "hover state ledger checks complete without exception", String(e), null);
+    }
+  }
+
+  
+  // =========================================================================
+  // Check 2: every SPEC beat's copy key(s) have at least one PRESENCE match
+  // in this file's own source. This deliberately checks presence only, not
+  // an occurrence count: this file's source legitimately contains many
+  // unrelated matches of short key substrings as CSS classes, DOM ids, and
+  // comments (e.g. a key like "rules" also matches "ol.rules-list", and a
+  // key like "faq" also matches "faq-caret" / "beat-faq"), so a raw count
+  // would be inflated by matches that are not copy-key assertions at all
+  // and would misrepresent itself as "coverage." Presence (>=1 occurrence)
+  // is a sound minimal check that a beat's key is referenced somewhere in
+  // this file; a count is not, so this never computes, stores, or prints
+  // one -- do not "improve" this into a count.
+  // =========================================================================
+  const beatSpecs = parseBeatCopyKeys(specText);
+  const ownSource = fs.readFileSync(__filename, "utf8");
+
+  // HARD REQUIREMENT (mirrors Check 1's t0Spec.ok gate): a parse that
+  // yields zero beats is not a pass, it's a check that verified nothing --
+  // e.g. a SPEC restructure renaming "### Beat N" to "### Step N" would
+  // make the loop below iterate zero times and silently exit clean. A
+  // bare non-zero count is not enough either: a parse that suddenly only
+  // finds 3 of the 10 real beats is just as broken and would pass a
+  // non-zero check. Require the parsed beat numbers to be contiguous from
+  // 0 with no gaps instead -- this is derived from the parse itself (not a
+  // hardcoded "10"), so a legitimately added Beat 10 does not fail it, and
+  // it subsumes the empty-array case (0 has no "beat 0", so it always
+  // fails contiguity-from-zero too).
+  const beatNums = beatSpecs.map((b) => parseInt(b.beatNum, 10)).sort((a, b) => a - b);
+  const maxBeatNum = beatNums.length ? beatNums[beatNums.length - 1] : -1;
+  const expectedBeatNums = [];
+  for (let i = 0; i <= maxBeatNum; i++) expectedBeatNums.push(i);
+  const beatsContiguousFromZero = beatNums.length > 0 && JSON.stringify(beatNums) === JSON.stringify(expectedBeatNums);
+  if (!beatsContiguousFromZero) {
+    fail(
+      "beat-key-coverage",
+      "docs/SPEC.md ### Beat N headings",
+      "docs/SPEC.md contains at least one '### Beat N' heading with a parseable copy-key line, and the parsed beat numbers are contiguous from 0 with no gaps",
+      beatNums.length === 0 ? "no beat headings parsed from docs/SPEC.md" : `parsed beat numbers: [${beatNums.join(", ")}]`,
+      null
+    );
+  }
+  for (const beat of beatSpecs) {
+    if (beat.keys.length === 0) {
+      fail(
+        "beat-key-coverage",
+        beat.headingLine,
+        "a '**copy key:**' or '**copy keys:**' line immediately following the beat heading, with at least one backticked key",
+        "no copy key(s) parsed for this beat heading",
+        null
+      );
+      continue;
+    }
+    for (const key of beat.keys) {
+      if (!ownSource.includes(key)) {
+        fail(
+          "beat-key-coverage",
+          `${beat.headingLine}: ${key}`,
+          `copy key "${key}" is present (occurs at least once) somewhere in tools/qa-walk.js's own source`,
+          `"${key}" does not occur anywhere in tools/qa-walk.js`,
+          null
+        );
+      }
+    }
+  }
+
+  // =========================================================================
+  // Check 3: bidirectional cross-check of the beat list parsed from §3's
+  // "### Beat N" headings (beatSpecs, above) against the SECOND, INDEPENDENT
+  // beat list parsed from §6's copy.json key map (parseCopyJsonKeyMap,
+  // above). Direction B below is what closes the tail-truncation gap: a §3
+  // heading rename (e.g. "### Beat 9" -> "### Step 9") leaves the
+  // contiguity-from-zero guard above completely satisfied (the surviving
+  // parse is still contiguous from 0), but §6's "recap — Beat 9" and
+  // "gutCheckFinal — Beat 9" entries are untouched by that rename, so their
+  // (key, beatNum) pairs are still present in keyMapPairs with nothing on
+  // the §3 side to match them -- surfacing exactly the beats that silently
+  // stopped being checked.
+  // =========================================================================
+  const keyMapPairs = parseCopyJsonKeyMap(specText);
+
+  // HARD REQUIREMENT (mirrors Check 1's t0Spec.ok gate and Check 2's
+  // beatsContiguousFromZero gate): an empty parse of §6 is not "nothing to
+  // disagree about," it is a check that verified nothing. Fail explicitly
+  // and do not run the per-key comparison below on a vacuous second source,
+  // which would otherwise report every §3 key as "missing from §6" in a way
+  // that is technically true but drowns out this specific, actionable cause.
+  if (keyMapPairs.length === 0) {
+    fail(
+      "beat-key-coverage",
+      "docs/SPEC.md ## 6. copy.json key map",
+      "docs/SPEC.md's '## 6. copy.json key map' fenced block parses to at least one (key, Beat N) pair",
+      "parsed zero (key, Beat N) pairs from §6 -- either the heading, the fenced block, or every beat-attributed line is missing/unparseable",
+      null
+    );
+  } else {
+    const keyToBeatHeadings = new Map();
+    for (const beat of beatSpecs) {
+      const beatNum = parseInt(beat.beatNum, 10);
+      for (const key of beat.keys) {
+        keyToBeatHeadings.set(key, beatNum);
+      }
+    }
+    const keyToBeatKeyMap = new Map();
+    for (const p of keyMapPairs) {
+      keyToBeatKeyMap.set(p.key, p.beatNum);
+    }
+
+    const allKeys = new Set([...keyToBeatHeadings.keys(), ...keyToBeatKeyMap.keys()]);
+    for (const key of allKeys) {
+      const hasHeading = keyToBeatHeadings.has(key);
+      const hasKeyMap = keyToBeatKeyMap.has(key);
+
+      if (hasHeading && !hasKeyMap) {
+        // Direction 1: a (key, beatNumber) pair from §3's beat headings that
+        // is absent from §6's map.
+        fail(
+          "beat-key-coverage",
+          `§3 '### Beat ${keyToBeatHeadings.get(key)}' copy key: ${key}`,
+          `key "${key}" (attributed to Beat ${keyToBeatHeadings.get(key)} by a §3 '### Beat N' heading) also has a matching "${key} — Beat ${keyToBeatHeadings.get(key)}" entry in §6's copy.json key map`,
+          `key "${key}" is attributed to Beat ${keyToBeatHeadings.get(key)} in §3's beat headings but has no entry at all in §6's copy.json key map`,
+          null
+        );
+      } else if (!hasHeading && hasKeyMap) {
+        // Direction 2: a (key, beatNumber) pair from §6's map that is
+        // absent from §3's beat headings -- the tail-truncation catcher.
+        fail(
+          "beat-key-coverage",
+          `§6 copy.json key map entry: ${key} — Beat ${keyToBeatKeyMap.get(key)}`,
+          `key "${key}" (attributed to Beat ${keyToBeatKeyMap.get(key)} by §6's copy.json key map) also has a matching '### Beat ${keyToBeatKeyMap.get(key)}' heading in §3`,
+          `key "${key}" is attributed to Beat ${keyToBeatKeyMap.get(key)} in §6's copy.json key map but no '### Beat ${keyToBeatKeyMap.get(key)}' heading exists (or no longer exists) in §3 -- this key's beat silently stopped being checked`,
+          null
+        );
+      } else if (hasHeading && hasKeyMap && keyToBeatHeadings.get(key) !== keyToBeatKeyMap.get(key)) {
+        // Direction 3: a key that appears in both but is attributed to
+        // different beat numbers.
+        fail(
+          "beat-key-coverage",
+          `copy key: ${key}`,
+          `key "${key}" is attributed to the SAME beat number in both §3's beat headings and §6's copy.json key map`,
+          `key "${key}" is attributed to Beat ${keyToBeatHeadings.get(key)} by §3's beat headings but to Beat ${keyToBeatKeyMap.get(key)} by §6's copy.json key map`,
+          null
+        );
+      }
     }
   }
 

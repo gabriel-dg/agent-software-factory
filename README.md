@@ -473,10 +473,34 @@ four more defects. Three of them had qa-walker's PASS on them at the time.
 
 Every one of these is the same failure shape as the bugs the pipeline did
 catch: a verifier checking correctly against a specification that does not
-mention the thing being checked. The pipeline never validates that its own
-specification is complete, and no layer in it can. The nine bugs listed under
+mention the thing being checked. The pipeline did not validate that its own
+specification was complete, and no layer in it did. The nine bugs listed under
 "What the pipeline actually found" are therefore the count of defects the
 pipeline found, not the count of defects that existed.
+
+That gap is now closed by a layer, not by a promise to be more careful.
+`docs/SPEC.md` carries a `## Visible at t=0` section naming the exact element
+ids expected to be visible on load, and `tools/qa-walk.js` checks the rendered
+page against it in both directions before the walk's first click. Every
+visible element inside `<main>` and `<footer>` is resolved up to its nearest
+ancestor listed in that section; anything resolving to nothing fails and is
+named by tag, id, class, and text. Every id the section lists as visible must
+actually be visible, and every id it lists as not visible must actually not
+be. An ungated footer fails it twice over, by name. After the walk, a second
+check reads `SPEC.md`'s `### Beat N` headings and fails if a beat's copy key
+appears nowhere in `qa-walk.js`'s own source, so a beat cannot be specified
+and left unasserted. Both checks were proved by sabotage in scratch copies
+rather than by inspection: removing the footer's gating fails the first,
+deleting Beat 9's only `gutCheckFinal` assertion fails the second, and an
+unsabotaged copy of the same scratch tree passes.
+
+What this layer checks is that the page renders nothing the spec does not
+account for, and that no specified beat goes unasserted. It does not make the
+spec correct. A region both the page and the spec omit is still invisible to
+it, and the spec can still be wrong about what a beat should say. It converts
+one specific failure, a rendered region no layer ever had an entry for, from
+undetectable into a test failure. It does not convert the spec into ground
+truth.
 
 ### What a verifier's own PASS is worth
 
@@ -512,8 +536,21 @@ asking for the underlying paths, never by accepting the agent's summary.
   files closely resembling the project's source of truth, carrying broken
   arithmetic, to version control. They were caught by inspection before
   staging, by no check.
+- The walker's beat-to-spec check shipped a first version that passed
+  vacuously. Zero parsed beats meant the loop body never ran and the check
+  reported success, so renaming `SPEC.md`'s `### Beat N` headings would have
+  left it verifying nothing while still printing a PASS. It is the same hole
+  that had been closed explicitly, with a comment saying so, in the adjacent
+  t=0 check, reintroduced two functions later in the same file in the same
+  sitting.
+- The same agent then reported that the contiguity guard it wrote to close
+  that hole "additionally catches a partial parse." It does not. `[0, 1, 2]`
+  is contiguous from zero and passes, so truncating the beat list from the
+  end went through unflagged. The claim was disproved by running the parser
+  against a renamed-headings copy, not by reading the report, and the gap it
+  concealed needed a second, independent source for the beat list to close.
 
-In this run, a verifying agent's own report of its work was wrong five times,
+In this run, a verifying agent's own report of its work was wrong seven times,
 and each time it was caught by inspecting the artifact rather than the
 report.
 
