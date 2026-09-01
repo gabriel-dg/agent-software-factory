@@ -2,14 +2,13 @@
 
 This repository is a **field report**, not a framework. One run of an
 eight-agent Claude Code pipeline, with exclusive file ownership and four
-scripted verification layers, used to build a Monty Hall explainer as the
-test article.
+scripted checks, used to build a Monty Hall explainer as the test article.
 
-**Question:** does a role-separated agent team catch things a single
-session does not, and at what cost?
+**Question:** what does a role-separated agent team with scripted checks
+actually catch, and at what cost?
 
 **What we measured:** cost, the shape of the failures, and what a PASS
-from each layer actually means.
+from each check actually means.
 
 **What we did not measure:** the single-session control. Nothing in this
 repo tells you whether eight agents beat one. An independent review of the
@@ -28,8 +27,8 @@ deliverable.
 
 ## What this run actually showed
 
-- **A PASS is not a working page.** All four verification layers reported
-  green. A human then opened the page and found four more defects, including
+- **A PASS is not a working page.** All four checks reported green. A
+  human then opened the page and found four more defects, including
   a footer that leaked the host-knowledge rule before the first click.
 - **The checks overlap, and one of them does not read the sentence it
   claims to verify.** `check-claims.js` compares a sibling `_assert` object
@@ -91,7 +90,7 @@ so a disagreement can be decided by a script instead of an argument.
 
 ## What the four checks actually check
 
-They are complementary, not independent. The external review was right
+Four checks, complementary, not independent. The external review was right
 about that. Commands run from the repo root.
 
 | check | command | what a PASS means | what it does not mean |
@@ -129,7 +128,7 @@ own telling.
 5. **"Disproportionately" vs exact survivorship.** Spoiled rounds *are*
    the switch-win cases, not approximately. The README reported this
    fixed while `faq.items[2]` still said "disproportionately". The
-   external review caught the leftover; no layer here could have, because
+   external review caught the leftover; no check here could have, because
    none reads the sentence.
 6. **A design fix that dropped the requirement.** art-director proposed
    replacing a "host forbidden" badge with disabled-button styling.
@@ -146,7 +145,7 @@ own telling.
 
 ## What the pipeline missed
 
-All four layers green. A human then walked the page.
+All four checks green. A human then walked the page.
 
 - Footer never gated, so the host-knowledge rule and colophon rendered
   under the opening poll. Not in `SPEC.md`, so qa-walker had no entry.
