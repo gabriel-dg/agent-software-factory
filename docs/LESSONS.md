@@ -31,30 +31,61 @@ territories.
 
 **Will this repeat?**
 
-The pipeline pays for itself over repeated use. For a single run, a
-well-prompted single session almost always wins.
+The scaffolding -- contracts, ownership, verifiers -- is written once and
+paid for on every run after it. A one-off job pays the whole setup cost
+against a single result.
 
-**Decision rule:** a multi-agent team multiplies cost by five to ten times.
-What it buys is that the system finds the errors instead of the end user.
-If that does not matter for this project, do not build it.
+**Decision rule:** what a multi-agent team buys is that the system finds
+the errors instead of the end user. What it cost in the reference run was
+$31.81 API-equivalent for one end-to-end run. No single-session control was
+run, so the multiple against one session is not a number this playbook has;
+measure it on your own work before budgeting on it. If finding the errors
+before the end user does not matter for this project, do not build it.
 
 ---
 
-## 2. The core principle
+## 2. The two classes of failure
 
-> Failures live at the interfaces between agents, not inside the agents
-> themselves.
+Errors come in two kinds. They have different causes, they are found by
+different things, and a team built to catch one of them will ship the
+other.
 
-In the reference run the pipeline caught nine bugs, and almost none of them
-was incompetence inside an agent. Each agent did the job its own brief
-described; what was missing were contracts between agents that nobody had
-written down. The one exception makes the same point from the other side: an
-agent reported completing a style pass it had not completed, and nothing
-checked the self-report until a check was added for it.
+> **Argument and content errors** happen inside a single agent's own
+> output. They are caught by an adversarial reviewer.
+>
+> **Contract and integration errors** happen between agents. They are
+> caught, or missed, according to how explicitly the contract was
+> written.
 
-This has one practical consequence that dominates everything else: design
-time should go to the boundaries, not the roles. Roles are easy to
-imagine. Boundaries are invisible until they break.
+**Inside one agent.** In the reference run the adversary found a false
+general law offered as proof ("an event that was going to happen either
+way can't be evidence", which is false, and which is the same shape of
+reasoning the page existed to disprove), a three-case enumeration with the
+third case dropped, and a set of joint probabilities that summed to 1/2
+with no stated renormalization. Each is wrong on its own terms, inside the
+output of one agent, with no boundary involved. No contract would have
+caught them, and no missing contract caused them. What caught them was a
+reviewer holding a position hostile to the conclusion.
+
+**Between agents.** The other kind does come from boundaries nobody wrote
+down. In the same run: a ledger line format that one agent wrote and
+another parsed, with the grammar never stated literally in either prompt;
+a module contract for sim.js that had to run both under node and from a
+`file://` page; that same `file://` constraint making `fetch("copy.json")`
+fail, so the strings had to be transcribed into the page instead; a
+contrast ledger verified line by line while describing pairs the page did
+not actually render; and a footer no check could fail because the spec
+never mentioned it. Each agent did the job its own brief described. The
+brief was silent about the seam.
+
+A third, smaller case sits between the two: an agent reported completing a
+style pass it had not completed. That is neither an argument error nor a
+contract error but an unverified self-report, and nothing caught it until
+a check read the artifact instead of the claim.
+
+Practical consequence: budget design time for both classes. Contracts are
+written before the run; the adversary is paid for during it. Drop either
+and one whole class of error has nothing pointed at it.
 
 ---
 
@@ -157,8 +188,11 @@ before assuming.
 
 ## 6. Cost and control
 
-**The orchestrator is the hidden cost.** In the reference run it consumed
-49%, as much as all the subagents combined. Subagents exist to protect the
+**The orchestrator is the hidden cost.** In the reference run, 51% of
+reported usage was attributed to named subagents and 49% was not; one
+agent is missing from the attributed list, so its share sits inside that
+49% too. Accumulated orchestrator context is the hypothesis those numbers
+are consistent with, not a measurement. Subagents exist to protect the
 main context, but every result that comes back stays there, and the
 context grows regardless.
 

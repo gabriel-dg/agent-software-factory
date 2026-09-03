@@ -158,10 +158,14 @@ All four checks green. A human then walked the page.
 - Badge had no accessible name (`aria-hidden` icon, no text).
 - Colophon URL was plain text, not a link.
 
-Same shape as the bugs it did catch: a verifier checking a specification
-that does not mention the thing. A later `## Visible at t=0` contract in
-`SPEC.md`, checked bidirectionally by qa-walker, converts *an unlisted
-rendered region* into a failure. It does not make the spec correct.
+Same shape as the contract failures it did catch: a verifier checking a
+specification that does not mention the thing. That shape covers the
+interface class only. Bugs 1 to 3 above are the other class -- errors
+inside one agent's own output, with no seam involved -- and no contract
+would have caught them; an adversarial reader did. A later
+`## Visible at t=0` contract in `SPEC.md`, checked bidirectionally by
+qa-walker, converts *an unlisted rendered region* into a failure. It does
+not make the spec correct.
 
 A report of verification work was wrong eight times in this run (seven
 agent self-reports, one orchestrator). Examples: coverage counted 21 gaps
@@ -215,17 +219,18 @@ missing. They sum to 51%. 42% of usage happened at over 150k tokens of
 context. Read the rest as a hypothesis the numbers permit, not as
 measured orchestrator overhead.
 
-A single well-prompted session would have built a comparable page for a
-small fraction of that cost. The extra cost bought the bug list, not a
-better-looking page.
+No single-session control was run. What is measured here is what this run
+cost: $31.81 API-equivalent, 2h 23m API time, 17h 24m wall clock. What one
+session would have cost, or caught, is not measured, so the comparison is
+not available from this repository.
 
 ## Limitations
 
-Several times the cost of one session, not a marginal overhead. The work
-has to split into files with one owner, and the claims have to be the
-kind a script can fail. Taste, visual quality, and whether an abstraction
-is right are out of scope; the pipeline checks correctness, not whether
-`DESIGN.md` looks good or the prose is pleasant.
+The run cost $31.81 API-equivalent, with no control run to compare it
+against. The work has to split into files with one owner, and the claims
+have to be the kind a script can fail. Taste, visual quality, and whether
+an abstraction is right are out of scope; the pipeline checks correctness,
+not whether `DESIGN.md` looks good or the prose is pleasant.
 
 To run the *page*: open `index.html`, or the
 [live demo](https://gabriel-dg.github.io/multi-agent-pipeline-study/).

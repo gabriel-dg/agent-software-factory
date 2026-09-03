@@ -1,3 +1,10 @@
+> **Editor's note, not part of the review.** The repository has since been
+> renamed. The live-page URL the reviewer drove,
+> `https://gabriel-dg.github.io/agent-software-factory/`, is now
+> https://gabriel-dg.github.io/multi-agent-pipeline-study/, and the repository
+> is now https://github.com/gabriel-dg/multi-agent-pipeline-study. Nothing
+> below this line has been edited.
+
 The closed-form numbers on the page are right. The experimental claims are not. The eight-agent machine is not what produced the value, and it is not worth what it cost.
 
 I checked every probability statement against Bayes, not against sim.js. I ran the three verification scripts. I drove the live page at https://gabriel-dg.github.io/agent-software-factory/ through the beats as a 50/50 reader, desktop and 375px. Git history is twelve commits, one of them a dump of the whole pipeline.
